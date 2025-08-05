@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Image, { StaticImageData } from 'next/image';
-import logo from '@/assets/logowhite.png';
+import logo from '@/assets/image.png';
 import { FaBell, FaUser, FaChevronDown } from 'react-icons/fa';
 import khFlag from '@/assets/kh.png';
 import usFlag from '@/assets/en.png';
