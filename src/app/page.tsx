@@ -1,12 +1,12 @@
 'use client';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useState, useEffect } from 'react';
 
-import ScoreCard from '@/components/ScoreCard';
-import QRButtons from '@/components/QRButtons';
-import AnnouncementCard from '@/components/AnnouncementCard';
+import ScoreCardGroup from '@/components/ScoreCard';
 import DiamondBanner from '@/components/DiamondBanner';
 import FloatingActionButton from '@/components/BottomNav';
+import DownloadAppCard from '@/components/download'; // ⬅️ Add this
 
 import fantaLogo from '@/assets/image.png';
 import up7Logo from '@/assets/image.png';
@@ -18,14 +18,13 @@ import ResultDialog from '@/components/ResultDialog';
 export default function HomePage() {
   const [showSpinWheel, setShowSpinWheel] = useState(true);
   const [showResultDialog, setShowResultDialog] = useState(false);
-  const [prize, setPrize] = useState<number | null>(null);
+  const [prize, setPrize] = useState<string | null>(null);
 
-  const handleSpinComplete = (result: number) => {
+  const handleSpinComplete = (result: string) => {
     setPrize(result);
     setShowSpinWheel(false);
     setShowResultDialog(true);
   };
-
   const handleCloseResult = () => {
     setShowResultDialog(false);
   };
@@ -38,13 +37,14 @@ export default function HomePage() {
       )}
 
       <DiamondBanner />
-      <div className="flex flex-row justify-between gap-2 overflow-hidden">
-        <ScoreCard title="Score" value={123} image={fantaLogo} />
-        <ScoreCard title="Score" value={456} image={up7Logo} />
-        <ScoreCard title="Score" value={789} image={spriteLogo} />
-      </div>
-      <QRButtons />
-      <AnnouncementCard />
+      <ScoreCardGroup
+        scores={[
+          { title: 'ពិន្ទុ', value: 50, image: fantaLogo },
+          { title: 'ពិន្ទុ', value: 0, image: up7Logo },
+          { title: 'ពិន្ទុ', value: 0, image: spriteLogo },
+        ]}
+      />
+      <DownloadAppCard />
       <FloatingActionButton />
     </div>
   );

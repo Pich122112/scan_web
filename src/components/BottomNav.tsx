@@ -1,43 +1,37 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { RiQrScanFill } from 'react-icons/ri';
+import { FaHome } from 'react-icons/fa';
+import { FaFacebookMessenger } from 'react-icons/fa';
 
 export default function FloatingActionButton() {
-    const [show, setShow] = useState(false);
-    const [lastScrollY, setLastScrollY] = useState(0);
+  return (
+    <div className=" bottom-0 left-0 w-full z-50 mt-5">
+      <div className="max-w-[1200px] mx-auto">
+        {/* Main Orange Bar */}
+        <div className="relative flex items-center justify-between bg-orange-500 rounded-full px-4 sm:px-6 py-4 shadow-lg w-full">
 
-    useEffect(() => {
-        const handleScroll = () => {
-            const currentScrollY = window.scrollY;
+          {/* Home Button */}
+          <button className="flex items-center gap-2 bg-black text-white px-4 sm:px-6 py-2 rounded-full text-sm font-semibold shadow-md">
+            <FaHome className="text-base" />
+            Home
+          </button>
 
-            if (currentScrollY - lastScrollY > 10 && currentScrollY > 30) {
-                // Scrolling down and past 30px
-                setShow(true);
-            } else if (lastScrollY - currentScrollY > 10) {
-                // Scrolling up
-                setShow(false);
-            }
+          {/* Contact Button */}
+          <button className="flex items-center gap-2 text-white border border-white px-3 sm:px-6 py-2 rounded-full text-sm font-semibold shadow-md">
+            <FaFacebookMessenger className="text-base" />
+            Contact
+          </button>
 
-            setLastScrollY(currentScrollY);
-        };
-
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, [lastScrollY]);
-
-    return (
-        <div
-            className={`fixed bottom-4 sm:bottom-20 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ease-in-out
-                ${show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'} 
-                flex flex-col items-center`}
-        >
-            <button
-                className="bg-gradient-to-tr from-orange-400 to-orange-600 text-white rounded-full p-5 shadow-2xl hover:shadow-orange-500 transition duration-300"
-                aria-label="Scan QR"
-            >
-                <RiQrScanFill className="text-3xl" />
+          {/* Center Floating Button */}
+          <div className="absolute bg-orange-500 rounded-full left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <button className="bg-orange p-4 rounded-full border-4 border-white shadow-xl drop-shadow-2xl hover:scale-105 transition">
+              <RiQrScanFill className="text-white text-5xl" />
             </button>
+          </div>
+
         </div>
-    );
+      </div>
+    </div>
+  );
 }

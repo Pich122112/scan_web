@@ -2,19 +2,21 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Dialog } from '@headlessui/react';
+import confetti from 'canvas-confetti';
 
-const prizes = [20, 30, 40, 50, 60, 100];
-const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#1abc9c'];
 
-export default function SpinWheelModal({ onClose }: { onClose: (prize: number) => void }) {
+const prizes = ["20$", "1 can", "30$", "50$", "30$", "50$"];
+const segmentCount = prizes.length;
+
+export default function SpinWheelModal({ onClose }: { onClose: (prize: string) => void }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [spinning, setSpinning] = useState(true);
-    const [resultPrize, setResultPrize] = useState<number | null>(null);
+    const [resultPrize, setResultPrize] = useState<string | null>(null);
     const animationRef = useRef<number | null>(null);
     const [isVisible, setIsVisible] = useState(false);
 
+
     useEffect(() => {
-        // Ensure component is visible before starting animation
         setIsVisible(true);
 
         const drawWheel = () => {
@@ -26,69 +28,120 @@ export default function SpinWheelModal({ onClose }: { onClose: (prize: number) =
 
             const size = canvas.width;
             const radius = size / 2;
-            const arc = (2 * Math.PI) / prizes.length;
+            const arc = (2 * Math.PI) / segmentCount;
 
-            // Clear canvas
             ctx.clearRect(0, 0, size, size);
 
-            // Draw wheel segments
+            // Wheel background and segments
             prizes.forEach((prize, i) => {
                 const angle = i * arc;
                 ctx.beginPath();
-                ctx.fillStyle = colors[i % colors.length];
                 ctx.moveTo(radius, radius);
-                ctx.arc(radius, radius, radius, angle, angle + arc, false);
-                ctx.lineTo(radius, radius);
+                ctx.arc(radius, radius, radius - 12, angle, angle + arc);
+                ctx.closePath();
+
+                // Alternate colors: even = orange, odd = black
+                ctx.fillStyle = i % 2 === 0 ? "#ff6600" : "#000";
                 ctx.fill();
 
-                // Draw text
+                // Text
                 ctx.save();
                 ctx.translate(radius, radius);
                 ctx.rotate(angle + arc / 2);
-                ctx.textAlign = 'right';
-                ctx.fillStyle = 'white';
-                ctx.font = 'bold 16px sans-serif';
-                ctx.fillText(`${prize} Score`, radius - 10, 10);
+                ctx.fillStyle = "white";
+                ctx.font = 'bold 20px sans-serif';
+                ctx.textAlign = "right";
+                ctx.fillText(prize, radius - 30, 8);
                 ctx.restore();
             });
+
+            // Lamps - 13 bulbs at original position (radius - 5) but fully visible
+            const bulbCount = 12;
+            const bulbRadius = 6; // Slightly smaller to ensure full visibility
+            const ringRadius = radius - 5; // Original position
+
+            // Adjust bulb positions to stay within canvas
+            const effectiveRadius = Math.min(ringRadius, radius - bulbRadius - 2);
+
+            // Draw bulbs
+            for (let i = 0; i < bulbCount; i++) {
+                const angle = (i / bulbCount) * 2 * Math.PI;
+                const x = radius + Math.cos(angle) * effectiveRadius;
+                const y = radius + Math.sin(angle) * effectiveRadius;
+
+                // Glow effect
+                ctx.beginPath();
+                ctx.shadowColor = "rgba(255, 255, 100, 0.9)";
+                ctx.shadowBlur = 15;
+                ctx.fillStyle = "#fffac2";
+                ctx.arc(x, y, bulbRadius + 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Bulb core
+                ctx.beginPath();
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = "#ffffff";
+                ctx.arc(x, y, bulbRadius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Highlight
+                ctx.beginPath();
+                ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+                ctx.arc(x - bulbRadius / 3, y - bulbRadius / 3, bulbRadius / 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Center hub
+            ctx.beginPath();
+            ctx.fillStyle = "white";
+            ctx.arc(radius, radius, 25, 0, 2 * Math.PI);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.fillStyle = "black";
+            ctx.arc(radius, radius, 6, 0, 2 * Math.PI);
+            ctx.fill();
         };
 
-        // Small delay to ensure DOM is ready
-        const timer = setTimeout(() => {
-            drawWheel();
-            spinWheel();
-        }, 50);
+        const fireConfetti = () => {
+            confetti({
+                particleCount: 100,
+                spread: 50,
+                origin: { y: 0.6 },
+                colors: ['#3300ff', '#ffffff', '#fff700'],
+            });
+        };
 
         const spinWheel = () => {
             let startTime: number | null = null;
             const duration = 3000;
-            const spinAngle = Math.random() * 360 + 720; // 2 full rotations + random angle
+            const spinAngle = Math.random() * 360 + 720;
 
             const animate = (timestamp: number) => {
                 if (!startTime) startTime = timestamp;
                 const elapsed = timestamp - startTime;
                 const progress = Math.min(elapsed / duration, 1);
 
-                // Easing function for smooth deceleration
                 const easedProgress = 1 - Math.pow(1 - progress, 3);
                 const rotation = easedProgress * spinAngle;
 
                 if (canvasRef.current) {
                     canvasRef.current.style.transform = `rotate(${rotation}deg)`;
-                    canvasRef.current.style.willChange = 'transform'; // Optimize for animation
                 }
 
                 if (progress < 1) {
                     animationRef.current = requestAnimationFrame(animate);
                 } else {
-                    // Calculate final prize
                     const finalAngle = spinAngle % 360;
-                    const segmentAngle = 360 / prizes.length;
-                    const index = Math.floor((360 - finalAngle + segmentAngle / 2) % 360 / segmentAngle);
-                    const prize = prizes[index];
+                    const segmentAngle = 360 / segmentCount;
+                    const index = Math.floor(
+                        ((360 - finalAngle - segmentAngle / 2) % 360 / segmentAngle)
+                    );
+                    const prize = prizes[index >= 0 ? index : prizes.length + index];
 
                     setResultPrize(prize);
                     setSpinning(false);
+                    fireConfetti(); // Add confetti here
                     setTimeout(() => onClose(prize), 2000);
                 }
             };
@@ -96,11 +149,15 @@ export default function SpinWheelModal({ onClose }: { onClose: (prize: number) =
             animationRef.current = requestAnimationFrame(animate);
         };
 
+
+        const timer = setTimeout(() => {
+            drawWheel();
+            spinWheel();
+        }, 50);
+
         return () => {
             clearTimeout(timer);
-            if (animationRef.current) {
-                cancelAnimationFrame(animationRef.current);
-            }
+            if (animationRef.current) cancelAnimationFrame(animationRef.current);
         };
     }, [onClose]);
 
@@ -110,31 +167,46 @@ export default function SpinWheelModal({ onClose }: { onClose: (prize: number) =
             onClose={() => { }}
             className={`fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
         >
-            <Dialog.Panel className="bg-white rounded-lg shadow-xl p-6 text-center relative transform transition-all duration-300">
-                <div className="relative w-[300px] h-[300px] mx-auto">
+            <Dialog.Panel className="relative w-full h-full flex flex-col items-center justify-center bg-[#ff6600]">
+                {/* Logo at the top */}
+                <div className="absolute top-6 left-1/2 -translate-x-1/2">
+                    <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg">
+                        <span className="text-[#ff6600] font-bold text-xl">LOGO</span>
+                        {/* <img src="/path-to-your-logo.png" alt="Logo" className="w-12 h-12" /> */}
+                    </div>
+                </div>
+                {/* Title */}
+                <h2 className="text-white text-xl font-bold my-3 font-[Poppins]">សូមស្វាគមន៍មកកាន់គេហទំព័រការស្កេន</h2>
+                <p className="text-white text-lg mb-4 font-bold font-[Poppins]">ផ្សងសំណាងរបស់យើង</p>
+
+                <div className="relative w-[300px] h-[300px] mt-4">
                     <canvas
                         ref={canvasRef}
                         width={300}
                         height={300}
-                        className="transition-transform duration-300 ease-out rounded-full"
+                        className="transition-transform duration-300 p-1 ease-out rounded-full bg-[#000000]"
                         style={{
                             transform: 'rotate(0deg)',
-                            backfaceVisibility: 'hidden' // Improve rendering performance
+                            backfaceVisibility: 'hidden',
+                            border: '4px solid white',
+                            borderRadius: '50%'
                         }}
                     />
-                    {/* Center dot */}
-                    <div className="absolute top-1/2 left-1/2 w-4 h-4 bg-black rounded-full -translate-x-1/2 -translate-y-1/2 z-10" />
-                    {/* Pointer */}
-                    <div className="absolute top-[-10px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[20px] border-b-red-500 z-20" />
+                    {/* Pointer at bottom pointing to top */}
+                    <div
+                        className="absolute bottom-[-14px] left-1/2 -translate-x-1/2 w-0 h-3 
+                            border-l-[12px] border-l-transparent 
+                            border-r-[12px] border-r-transparent 
+                            border-b-[20px] border-b-white z-20"
+                    />
                 </div>
 
-                {spinning ? (
-                    <p className="mt-4 text-lg font-semibold animate-pulse">Spinning the wheel...</p>
-                ) : (
-                    <div className="mt-4 text-2xl font-bold text-green-600 animate-bounce">
-                        🎉 You won {resultPrize} points! 🎉
-                    </div>
+                {spinning && (
+                    <p className="mt-4 text-lg font-semibold animate-pulse text-white">
+                        កំពុងបង្វិលសូមរង់ចាំ...
+                    </p>
                 )}
+
             </Dialog.Panel>
         </Dialog>
     );

@@ -11,7 +11,7 @@ export default function DiamondBanner() {
             {/* Diamond icon with shine effect */}
             <div className="text-amber-100 text-3xl sm:text-4xl md:text-5xl mr-2 sm:mr-4 relative transition-transform duration-500 group-hover:rotate-[15deg]">
                 <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-                <FaGem className="drop-shadow-lg animate-pulse" />
+                <FaGem className="drop-shadow-lg animate-pulse text-white" />
             </div>
 
             {/* Count display */}
