@@ -1,27 +1,66 @@
 "use client";
 
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 
-const PhoneContext = createContext<{
-    phoneNumber: string;
-    tempPhoneNumber: string;
-    setTempPhoneNumber: (phone: string) => void;
-    confirmPhoneNumber: () => void;
-}>(null!);
+interface Wallet {
+  wallet_id: number;
+  wallet_name: string;
+  wallet_code: string;
+  balance: number;
+}
 
-export const PhoneProvider = ({ children }: { children: React.ReactNode }) => {
-    const [phoneNumber, setPhoneNumber] = useState('');
-    const [tempPhoneNumber, setTempPhoneNumber] = useState('');
+interface UserData {
+  id: number;
+  name: string;
+  status: number;
+  phone_number: string;
+  user_type: number;
+  passcode: number;
+  signature: string;
+  wallets: Wallet[];
+}
 
-    const confirmPhoneNumber = () => {
-        setPhoneNumber(tempPhoneNumber);
-    };
+interface PhoneContextType {
+  tempPhoneNumber: string;
+  setTempPhoneNumber: (phone: string) => void;
+  confirmPhoneNumber: () => void;
+  userData: UserData | null;
+  setUserData: (data: UserData) => void;
+}
 
-    return (
-        <PhoneContext.Provider value={{ phoneNumber, tempPhoneNumber, setTempPhoneNumber, confirmPhoneNumber }}>
-            {children}
-        </PhoneContext.Provider>
-    );
+const PhoneContext = createContext<PhoneContextType | undefined>(undefined);
+
+export const usePhone = () => {
+  const context = useContext(PhoneContext);
+  if (context === undefined) {
+    throw new Error('usePhone must be used within a PhoneProvider');
+  }
+  return context;
 };
 
-export const usePhone = () => useContext(PhoneContext);
+interface PhoneProviderProps {
+  children: ReactNode;
+}
+
+export const PhoneProvider: React.FC<PhoneProviderProps> = ({ children }) => {
+  const [tempPhoneNumber, setTempPhoneNumber] = useState('');
+  const [userData, setUserData] = useState<UserData | null>(null);
+
+  const confirmPhoneNumber = () => {
+    // Any additional logic when phone number is confirmed
+  };
+
+  return (
+    <PhoneContext.Provider
+      value={{
+        tempPhoneNumber,
+        setTempPhoneNumber,
+        confirmPhoneNumber,
+        userData,
+        setUserData,
+      }}
+    >
+      {children}
+    </PhoneContext.Provider>
+  );
+};

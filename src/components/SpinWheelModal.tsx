@@ -5,12 +5,13 @@ import { Dialog } from '@headlessui/react';
 import confetti from 'canvas-confetti';
 
 
-const prizes = ["20$", "1 can", "30$", "50$", "30$", "50$"];
+const prizes = ["20 Score", "1 Score", "30 Score", "50 Score", "30 D", "300 D"];
 const segmentCount = prizes.length;
 
 export default function SpinWheelModal({ onClose }: { onClose: (prize: string) => void }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [spinning, setSpinning] = useState(true);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [resultPrize, setResultPrize] = useState<string | null>(null);
     const animationRef = useRef<number | null>(null);
     const [isVisible, setIsVisible] = useState(false);

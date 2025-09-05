@@ -7,6 +7,7 @@ import ScoreCardGroup from '@/components/ScoreCard';
 import DiamondBanner from '@/components/DiamondBanner';
 import FloatingActionButton from '@/components/BottomNav';
 import DownloadAppCard from '@/components/download'; // ⬅️ Add this
+import { usePhone } from '@/context/PhoneContext';
 
 import fantaLogo from '@/assets/image.png';
 import up7Logo from '@/assets/image.png';
@@ -19,6 +20,7 @@ export default function HomePage() {
   const [showSpinWheel, setShowSpinWheel] = useState(true);
   const [showResultDialog, setShowResultDialog] = useState(false);
   const [prize, setPrize] = useState<string | null>(null);
+  const { userData } = usePhone();
 
   const handleSpinComplete = (result: string) => {
     setPrize(result);
@@ -29,6 +31,13 @@ export default function HomePage() {
     setShowResultDialog(false);
   };
 
+    // Extract wallet balances from user data
+  const gbBalance = userData?.wallets?.find(w => w.wallet_code === '1')?.balance || 0;
+  const BSBalance = userData?.wallets?.find(w => w.wallet_code === '2')?.balance || 0;
+  const idBalance = userData?.wallets?.find(w => w.wallet_code === '3')?.balance || 0;
+  const dmBalance = userData?.wallets?.find(w => w.wallet_code === '4')?.balance || 0;
+
+
   return (
     <div className="space-y-6">
       {showSpinWheel && <SpinWheelModal onClose={handleSpinComplete} />}
@@ -36,12 +45,12 @@ export default function HomePage() {
         <ResultDialog prize={prize} onClose={handleCloseResult} />
       )}
 
-      <DiamondBanner />
+      <DiamondBanner diamondCount={dmBalance} />
       <ScoreCardGroup
         scores={[
-          { title: 'ពិន្ទុ', value: 50, image: fantaLogo },
-          { title: 'ពិន្ទុ', value: 0, image: up7Logo },
-          { title: 'ពិន្ទុ', value: 0, image: spriteLogo },
+          { title: 'GB', value: gbBalance, image: fantaLogo },
+          { title: 'BS', value: BSBalance, image: up7Logo },
+          { title: 'ID', value: idBalance, image: spriteLogo },
         ]}
       />
       <DownloadAppCard />

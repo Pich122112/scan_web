@@ -4,6 +4,74 @@ import { ArrowRightIcon } from '@heroicons/react/24/solid';
 import confetti from 'canvas-confetti';
 import { usePhone } from '@/context/PhoneContext';
 
+// Helper function to encode form data
+const encodeFormData = (data: Record<string, string>): string => {
+  return Object.keys(data)
+    .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(data[key]))
+    .join('&');
+};
+
+// API service functions
+const requestOtp = async (phone: string) => {
+  const formData = encodeFormData({ phone });
+
+  const response = await fetch('https://redeemapi.piikmall.com/api/v2/auth/request-otp', {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: formData
+  });
+  return response.json();
+};
+
+const verifyOtp = async (phone: string, otp: string) => {
+  const formData = encodeFormData({
+    phone,
+    otp
+  });
+
+  const response = await fetch('https://redeemapi.piikmall.com/api/v2/auth/verify-otp', {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: formData
+  });
+  return response.json();
+};
+
+// Fetch user profile data
+const fetchUserProfile = async (token: string) => {
+  const response = await fetch('https://redeemapi.piikmall.com/api/v2/user/profile', {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  return response.json();
+};
+
+// Country code data
+const countryCodes = [
+  { code: '855', name: 'Cambodia', flag: '🇰🇭' },
+  { code: '1', name: 'USA', flag: '🇺🇸' },
+  { code: '44', name: 'UK', flag: '🇬🇧' },
+  { code: '86', name: 'China', flag: '🇨🇳' },
+  { code: '91', name: 'India', flag: '🇮🇳' },
+  { code: '84', name: 'Vietnam', flag: '🇻🇳' },
+  { code: '66', name: 'Thailand', flag: '🇹🇭' },
+  { code: '95', name: 'Myanmar', flag: '🇲🇲' },
+  { code: '856', name: 'Laos', flag: '🇱🇦' },
+];
+
+const PHONE_STORAGE_KEY = 'userVerifiedPhone';
+const TOKEN_STORAGE_KEY = 'userAuthToken';
+const USER_DATA_STORAGE_KEY = 'userProfileData';
+
 export default function ResultDialog({
   prize,
   onClose,
@@ -12,7 +80,30 @@ export default function ResultDialog({
   onClose: () => void;
 }) {
   const [error, setError] = useState('');
-  const { tempPhoneNumber, setTempPhoneNumber, confirmPhoneNumber } = usePhone();
+  const [otp, setOtp] = useState('');
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState(countryCodes[0]); // Default to Cambodia
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  const { tempPhoneNumber, setTempPhoneNumber, confirmPhoneNumber, setUserData } = usePhone();
+
+  // Check on mount if phone is already verified and stored
+  useEffect(() => {
+    const storedPhone = localStorage.getItem(PHONE_STORAGE_KEY);
+    const storedUserData = localStorage.getItem(USER_DATA_STORAGE_KEY);
+    
+    if (storedPhone && storedUserData) {
+      // User is already verified, skip dialog
+      try {
+        setUserData(JSON.parse(storedUserData));
+      } catch (e) {
+        console.error('Failed to parse stored user data', e);
+      }
+      onClose();
+    }
+  }, [onClose, setUserData]);
 
   useEffect(() => {
     const colors = ['#3300ff', '#ffffff', '#fff700'];
@@ -41,16 +132,101 @@ export default function ResultDialog({
     };
   }, []);
 
-  const handleSubmit = () => {
-    if (!tempPhoneNumber.trim()) {
+  // Update the full phone number when country code or phone number changes
+  useEffect(() => {
+    const fullPhone = selectedCountry.code + phoneNumber;
+    setTempPhoneNumber(fullPhone);
+  }, [selectedCountry, phoneNumber, setTempPhoneNumber]);
+
+  const handleRequestOtp = async () => {
+    if (!phoneNumber.trim()) {
       setError('Please enter your phone number');
       return;
     }
 
-    confirmPhoneNumber(); // ✅ Save input to phoneNumber context only when confirmed
-    onClose();
+    if (phoneNumber.length < 8) {
+      setError('Phone number must be at least 8 digits');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await requestOtp(tempPhoneNumber);
+      if (result.success) {
+        setOtpSent(true);
+        setShowOtpInput(true);
+        setError('');
+      } else {
+        setError(result.message || 'Failed to send OTP');
+      }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      setError('Network error. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  const handleVerifyOtp = async () => {
+    if (!otp.trim() || otp.length !== 4) {
+      setError('Please enter a valid 4-digit OTP');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await verifyOtp(tempPhoneNumber, otp);
+      if (result.success) {
+        // Store the authentication token
+        const authToken = result.data?.token || result.token;
+        if (authToken) {
+          localStorage.setItem(TOKEN_STORAGE_KEY, authToken);
+          
+          // Fetch user profile data
+          const userProfile = await fetchUserProfile(authToken);
+          if (userProfile.success) {
+            // Store user data in context and localStorage
+            setUserData(userProfile.data);
+            localStorage.setItem(USER_DATA_STORAGE_KEY, JSON.stringify(userProfile.data));
+            
+            // Also store the verified phone
+            confirmPhoneNumber();
+            localStorage.setItem(PHONE_STORAGE_KEY, tempPhoneNumber);
+            
+            onClose();
+          } else {
+            setError('Failed to fetch user data');
+          }
+        } else {
+          setError('Authentication token not received');
+        }
+      } else {
+        setError(result.message || 'Invalid OTP');
+      }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      setError('Verification failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^0-9]/g, '');
+    setPhoneNumber(value);
+    setError('');
+  };
+
+  const selectCountry = (country: typeof countryCodes[0]) => {
+    setSelectedCountry(country);
+    setShowCountryDropdown(false);
+  };
+
+  // Only show input if phone is not stored
+  const storedPhone = typeof window !== 'undefined' ? localStorage.getItem(PHONE_STORAGE_KEY) : null;
+  if (storedPhone) {
+    return null;
+  }
 
   return (
     <Dialog
@@ -59,7 +235,7 @@ export default function ResultDialog({
       className="fixed inset-0 z-50 flex items-center justify-center"
     >
       <div className="absolute inset-0 bg-orange-500" />
-      <Dialog.Panel className="relative z-10 bg-white rounded-2xl shadow-xl text-center p-6 w-[320px]">
+      <Dialog.Panel className="relative z-10 bg-white rounded-2xl shadow-xl text-center p-6 w-[340px]">
         <div className="text-6xl mb-5">🎊</div>
         <div className="text-gray-800 font-medium text-base">
           សូមអបអរសាទរដល់អ្នកទទួលបាន
@@ -71,34 +247,105 @@ export default function ResultDialog({
           ពី GANZBERG
         </div>
 
-        {/* Input field with error handling */}
+        {/* Phone input field with country code */}
         <div className="mt-5">
-          <input
-            type="text"
-            value={tempPhoneNumber}
-            onChange={(e) => {
-              setTempPhoneNumber(e.target.value);
-              setError('');
-            }}
-            placeholder="សូមបញ្ចូលលេខទូរស័ព្ទរបស់អ្នក"
-            className={`w-full border ${error ? 'border-red-500' : 'border-gray-300'} rounded-full px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400`}
-          />
+          <div className="flex items-center space-x-2">
+            {/* Country code dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowCountryDropdown(!showCountryDropdown)}
+                className="flex items-center space-x-1 px-3 py-3 border border-gray-300 rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 min-w-[80px]"
+                disabled={otpSent}
+              >
+                <span>{selectedCountry.flag}</span>
+                <span>+{selectedCountry.code}</span>
+                <svg
+                  className={`w-4 h-4 transition-transform ${showCountryDropdown ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
 
-          {error && (
-            <p className="text-red-500 text-xs mt-1 text-left pl-4">
-              {error}
-            </p>
-          )}
+              {showCountryDropdown && (
+                <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+                  {countryCodes.map((country) => (
+                    <button
+                      key={country.code}
+                      type="button"
+                      onClick={() => selectCountry(country)}
+                      className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-2"
+                    >
+                      <span>{country.flag}</span>
+                      <span>+{country.code}</span>
+                      <span className="text-gray-500 text-sm">{country.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Phone number input */}
+            <input
+              type="tel"
+              value={phoneNumber}
+              onChange={handlePhoneNumberChange}
+              placeholder="លេខទូរស័ព្ទ"
+              className={`flex-1 border ${error ? 'border-red-500' : 'border-gray-300'} rounded-full px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400`}
+              disabled={otpSent}
+              maxLength={15}
+            />
+          </div>
         </div>
 
-        {/* Submit button */}
-        <button
-          onClick={handleSubmit}
-          className="mt-8 w-full bg-orange-500 text-white font-semibold rounded-full flex items-center justify-center py-3 hover:bg-orange-600 transition"
-        >
-          បញ្ចាក់
-          <ArrowRightIcon className="w-4 h-4 ml-2" />
-        </button>
+        {/* OTP input field (shown after OTP is requested) */}
+        {showOtpInput && (
+          <div className="mt-4">
+            <input
+              type="text"
+              value={otp}
+              onChange={(e) => {
+                setOtp(e.target.value.replace(/[^0-9]/g, '').slice(0, 4));
+                setError('');
+              }}
+              placeholder="បញ្ចូលកូដ OTP"
+              className="w-full border border-gray-300 rounded-full px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              maxLength={4}
+            />
+          </div>
+        )}
+
+        {error && (
+          <p className="text-red-500 text-xs mt-2 text-center">
+            {error}
+          </p>
+        )}
+
+        {/* Conditional buttons */}
+        <div className="mt-6">
+          {!otpSent ? (
+            <button
+              onClick={handleRequestOtp}
+              disabled={isLoading}
+              className="w-full bg-orange-500 text-white font-semibold rounded-full flex items-center justify-center py-3 hover:bg-orange-600 transition disabled:opacity-50"
+            >
+              {isLoading ? 'កំពុងផ្ញើ...' : 'យកកូដ'}
+              <ArrowRightIcon className="w-4 h-4 ml-2" />
+            </button>
+          ) : (
+            <button
+              onClick={handleVerifyOtp}
+              disabled={isLoading}
+              className="w-full bg-green-500 text-white font-semibold rounded-full flex items-center justify-center py-3 hover:bg-green-600 transition disabled:opacity-50"
+            >
+              {isLoading ? 'កំពុងផ្ទៀងផ្ទាត់...' : 'បញ្ជាក់'}
+              <ArrowRightIcon className="w-4 h-4 ml-2" />
+            </button>
+          )}
+        </div>
       </Dialog.Panel>
     </Dialog>
   );

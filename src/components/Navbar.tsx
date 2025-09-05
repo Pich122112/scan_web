@@ -6,8 +6,10 @@ import { FaBell, FaQrcode } from 'react-icons/fa';
 import { usePhone } from '@/context/PhoneContext';
 
 export default function Navbar() {
-    const { phoneNumber } = usePhone();
+    const { tempPhoneNumber, userData } = usePhone();
 
+    // Use the phone number from user data if available, otherwise use the temporary one
+    const displayPhone = userData?.phone_number || tempPhoneNumber;
 
     return (
         <nav className="bg-orange-500 w-full fixed top-0 left-0 right-0 z-50">
@@ -28,15 +30,13 @@ export default function Navbar() {
                     <div className="text-white">
                         <p className="font-semibold text-white/90 text-sm sm:text-base">Welcome 👋</p>
                         <p className="font-bold text-white text-sm sm:text-xl">
-                            {phoneNumber || 'Guest'}
+                            {displayPhone || 'Guest'}
                         </p>
                     </div>
                 </div>
 
                 {/* Right: Language and Icons */}
                 <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-
-
                     {/* Bell */}
                     <button className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all duration-200 relative">
                         <FaBell className="text-lg text-white" />
@@ -47,7 +47,6 @@ export default function Navbar() {
                     <button className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all duration-200">
                         <FaQrcode className="text-lg text-white" />
                     </button>
-                    
                 </div>
             </div>
         </nav>

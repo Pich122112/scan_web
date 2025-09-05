@@ -1,8 +1,10 @@
 import { FaGem } from 'react-icons/fa';
 
-export default function DiamondBanner() {
-    const diamondCount = 250; // Replace with dynamic value if needed
+interface DiamondBannerProps {
+  diamondCount: number;
+}
 
+export default function DiamondBanner({ diamondCount }: DiamondBannerProps) {
     return (
         <div className="relative bg-orange-500 mt-10 rounded-xl h-30 sm:h-60 flex items-center justify-center text-white shadow-lg overflow-hidden group sm:mx-0">
             {/* Shimmer effect background */}
