@@ -1,59 +1,11 @@
+// components/ResultDialog.tsx
 import { useEffect, useState } from 'react';
 import { Dialog } from '@headlessui/react';
 import { ArrowRightIcon } from '@heroicons/react/24/solid';
 import confetti from 'canvas-confetti';
 import { usePhone } from '@/context/PhoneContext';
-
-// Helper function to encode form data
-const encodeFormData = (data: Record<string, string>): string => {
-  return Object.keys(data)
-    .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(data[key]))
-    .join('&');
-};
-
-// API service functions
-const requestOtp = async (phone: string) => {
-  const formData = encodeFormData({ phone });
-
-  const response = await fetch('https://redeemapi.piikmall.com/api/v2/auth/request-otp', {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: formData
-  });
-  return response.json();
-};
-
-const verifyOtp = async (phone: string, otp: string) => {
-  const formData = encodeFormData({
-    phone,
-    otp
-  });
-
-  const response = await fetch('https://redeemapi.piikmall.com/api/v2/auth/verify-otp', {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: formData
-  });
-  return response.json();
-};
-
-// Fetch user profile data
-const fetchUserProfile = async (token: string) => {
-  const response = await fetch('https://redeemapi.piikmall.com/api/v2/user/profile', {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
-  });
-  return response.json();
-};
+import { requestOtp, verifyOtp, fetchUserProfile, PHONE_STORAGE_KEY, TOKEN_STORAGE_KEY, USER_DATA_STORAGE_KEY } from '@/services/auth_api';
+import { DeviceUUID } from '@/utils/deviceUUID';
 
 // Country code data
 const countryCodes = [
@@ -67,10 +19,6 @@ const countryCodes = [
   { code: '95', name: 'Myanmar', flag: '🇲🇲' },
   { code: '856', name: 'Laos', flag: '🇱🇦' },
 ];
-
-const PHONE_STORAGE_KEY = 'userVerifiedPhone';
-const TOKEN_STORAGE_KEY = 'userAuthToken';
-const USER_DATA_STORAGE_KEY = 'userProfileData';
 
 export default function ResultDialog({
   prize,
@@ -93,7 +41,7 @@ export default function ResultDialog({
   useEffect(() => {
     const storedPhone = localStorage.getItem(PHONE_STORAGE_KEY);
     const storedUserData = localStorage.getItem(USER_DATA_STORAGE_KEY);
-    
+
     if (storedPhone && storedUserData) {
       // User is already verified, skip dialog
       try {
@@ -140,7 +88,7 @@ export default function ResultDialog({
 
   const handleRequestOtp = async () => {
     if (!phoneNumber.trim()) {
-      setError('Please enter your phone number');
+      setError('សូមបញ្ចូលលេខទូរស័ព្ទរបស់អ្នក។');
       return;
     }
 
@@ -159,7 +107,7 @@ export default function ResultDialog({
       } else {
         setError(result.message || 'Failed to send OTP');
       }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       setError('Network error. Please try again.');
     } finally {
@@ -175,24 +123,38 @@ export default function ResultDialog({
 
     setIsLoading(true);
     try {
-      const result = await verifyOtp(tempPhoneNumber, otp);
+      // Get device UUID
+      const deviceUuid = await DeviceUUID.getUUID();
+
+
+      // 🐛 Debug log UUID
+      console.log("📌 Sending UUID to backend:", deviceUuid);
+
+      // Get FCM token if available (optional)
+      const fcmToken = ''; // You can implement FCM token retrieval here
+
+      const result = await verifyOtp(tempPhoneNumber, otp, deviceUuid, fcmToken);
+
+      // 🐛 Debug log response
+      console.log("✅ verifyOtp response:", result);
+
       if (result.success) {
         // Store the authentication token
         const authToken = result.data?.token || result.token;
         if (authToken) {
           localStorage.setItem(TOKEN_STORAGE_KEY, authToken);
-          
+
           // Fetch user profile data
           const userProfile = await fetchUserProfile(authToken);
           if (userProfile.success) {
             // Store user data in context and localStorage
             setUserData(userProfile.data);
             localStorage.setItem(USER_DATA_STORAGE_KEY, JSON.stringify(userProfile.data));
-            
+
             // Also store the verified phone
             confirmPhoneNumber();
             localStorage.setItem(PHONE_STORAGE_KEY, tempPhoneNumber);
-            
+
             onClose();
           } else {
             setError('Failed to fetch user data');
@@ -203,7 +165,7 @@ export default function ResultDialog({
       } else {
         setError(result.message || 'Invalid OTP');
       }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       setError('Verification failed. Please try again.');
     } finally {
@@ -231,11 +193,11 @@ export default function ResultDialog({
   return (
     <Dialog
       open={true}
-      onClose={onClose}
+      onClose={() => { }}   // ⛔ do nothing so user can't close
       className="fixed inset-0 z-50 flex items-center justify-center"
     >
       <div className="absolute inset-0 bg-orange-500" />
-      <Dialog.Panel className="relative z-10 bg-white rounded-2xl shadow-xl text-center p-6 w-[340px]">
+      <Dialog.Panel className="relative z-10 bg-white rounded-2xl shadow-xl text-center px-4 py-6 w-[340px] focus:outline-none">
         <div className="text-6xl mb-5">🎊</div>
         <div className="text-gray-800 font-medium text-base">
           សូមអបអរសាទរដល់អ្នកទទួលបាន
@@ -256,10 +218,10 @@ export default function ResultDialog({
                 type="button"
                 onClick={() => setShowCountryDropdown(!showCountryDropdown)}
                 className="flex items-center space-x-1 px-3 py-3 border border-gray-300 rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 min-w-[80px]"
-                disabled={otpSent}
+              // disabled={otpSent}
               >
                 <span>{selectedCountry.flag}</span>
-                <span>+{selectedCountry.code}</span>
+                <span className='text-gray-900 font-bold'>+{selectedCountry.code}</span>
                 <svg
                   className={`w-4 h-4 transition-transform ${showCountryDropdown ? 'rotate-180' : ''}`}
                   fill="none"
@@ -271,13 +233,13 @@ export default function ResultDialog({
               </button>
 
               {showCountryDropdown && (
-                <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+                <div className="absolute top-full left-0 text-gray-900 mt-1 w-48 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
                   {countryCodes.map((country) => (
                     <button
                       key={country.code}
                       type="button"
                       onClick={() => selectCountry(country)}
-                      className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-2"
+                      className="w-full px-4 py-2 text-left hover:bg-gray-100 flex text-gray-900 items-center space-x-2"
                     >
                       <span>{country.flag}</span>
                       <span>+{country.code}</span>
@@ -294,8 +256,8 @@ export default function ResultDialog({
               value={phoneNumber}
               onChange={handlePhoneNumberChange}
               placeholder="លេខទូរស័ព្ទ"
-              className={`flex-1 border ${error ? 'border-red-500' : 'border-gray-300'} rounded-full px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400`}
-              disabled={otpSent}
+              className={`flex-1 border ${error ? 'border-red-500' : 'border-gray-300'} rounded-full px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-400`}
+              // disabled={otpSent}
               maxLength={15}
             />
           </div>
@@ -312,14 +274,14 @@ export default function ResultDialog({
                 setError('');
               }}
               placeholder="បញ្ចូលកូដ OTP"
-              className="w-full border border-gray-300 rounded-full px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="w-full border border-gray-300 rounded-full px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-400"
               maxLength={4}
             />
           </div>
         )}
 
         {error && (
-          <p className="text-red-500 text-xs mt-2 text-center">
+          <p className="text-red-500 text-xs mt-2">
             {error}
           </p>
         )}
@@ -329,7 +291,7 @@ export default function ResultDialog({
           {!otpSent ? (
             <button
               onClick={handleRequestOtp}
-              disabled={isLoading}
+              // disabled={isLoading}
               className="w-full bg-orange-500 text-white font-semibold rounded-full flex items-center justify-center py-3 hover:bg-orange-600 transition disabled:opacity-50"
             >
               {isLoading ? 'កំពុងផ្ញើ...' : 'យកកូដ'}
@@ -338,7 +300,7 @@ export default function ResultDialog({
           ) : (
             <button
               onClick={handleVerifyOtp}
-              disabled={isLoading}
+              // disabled={isLoading}
               className="w-full bg-green-500 text-white font-semibold rounded-full flex items-center justify-center py-3 hover:bg-green-600 transition disabled:opacity-50"
             >
               {isLoading ? 'កំពុងផ្ទៀងផ្ទាត់...' : 'បញ្ជាក់'}
@@ -350,3 +312,5 @@ export default function ResultDialog({
     </Dialog>
   );
 }
+
+//Correct with 316 line code changes

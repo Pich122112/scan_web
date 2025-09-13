@@ -1,105 +1,212 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { Dialog } from '@headlessui/react';
 import confetti from 'canvas-confetti';
 
+interface PrizeType {
+    label: string;
+    issuer: string;
+    amount: number;
+    wallet_name: string;
+}
 
-const prizes = ["20 Score", "1 Score", "30 Score", "50 Score", "30 D", "300 D"];
-const segmentCount = prizes.length;
+interface SpinWheelModalProps {
+    onClose: (prize: string) => void;
+    prize: PrizeType | null;
+}
 
-export default function SpinWheelModal({ onClose }: { onClose: (prize: string) => void }) {
+export default function SpinWheelModal({ onClose, prize }: SpinWheelModalProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [spinning, setSpinning] = useState(true);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [resultPrize, setResultPrize] = useState<string | null>(null);
-    const animationRef = useRef<number | null>(null);
     const [isVisible, setIsVisible] = useState(false);
+    const [resultPrize, setResultPrize] = useState<PrizeType | null>(null);
+    const animationRef = useRef<number | null>(null);
+    const [randomPrizes, setRandomPrizes] = useState<PrizeType[]>([]);
 
+    // Function to generate random prizes
+    const generateRandomPrizes = (excludePrize?: PrizeType | null) => {
+        const prizes: PrizeType[] = [];
+        const prizeCount = Math.floor(Math.random() * 2) + 2; // 2 or 3 random prizes
+
+        // Define possible prize configurations
+        const scoreAmounts = [1, 5, 10, 20, 30, 50, 100];
+        const dAmounts = [30, 50, 100, 200, 300, 500];
+
+        // Generate random Score prizes
+        const scoreCount = Math.floor(Math.random() * 2) + 1; // 1 or 2 Score prizes
+        for (let i = 0; i < scoreCount; i++) {
+            const amount = scoreAmounts[Math.floor(Math.random() * scoreAmounts.length)];
+            // Skip if this amount matches the excluded prize
+            if (excludePrize && excludePrize.wallet_name === "GB" && excludePrize.amount === amount) {
+                continue;
+            }
+            prizes.push({
+                label: `${amount} Score`,
+                issuer: "GB",
+                amount: amount,
+                wallet_name: "GB"
+            });
+        }
+
+        // Generate random D prizes
+        const dCount = Math.floor(Math.random() * 2) + 1; // 1 or 2 D prizes
+        for (let i = 0; i < dCount; i++) {
+            const amount = dAmounts[Math.floor(Math.random() * dAmounts.length)];
+            // Skip if this amount matches the excluded prize
+            if (excludePrize && excludePrize.wallet_name === "D" && excludePrize.amount === amount) {
+                continue;
+            }
+            prizes.push({
+                label: `${amount} D`,
+                issuer: "GB",
+                amount: amount,
+                wallet_name: "D"
+            });
+        }
+
+        // Shuffle the prizes array
+        for (let i = prizes.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [prizes[i], prizes[j]] = [prizes[j], prizes[i]];
+        }
+
+        // Return only the requested number of prizes
+        return prizes.slice(0, prizeCount);
+    };
+
+    // Generate random prizes on component mount
+    useEffect(() => {
+        const randomPrizes = generateRandomPrizes(prize);
+        setRandomPrizes(randomPrizes);
+        console.log('🎲 Generated random prizes:', randomPrizes);
+    }, [prize]);
+
+    // Ensure the won prize is always present in the wheel with random other prizes
+    const wheelPrizes = useMemo(() => {
+        if (!prize) return randomPrizes;
+
+        // Check if prize already exists in random prizes
+        const existingIndex = randomPrizes.findIndex(
+            p => String(p.amount) === String(prize.amount) && p.wallet_name === prize.wallet_name
+        );
+
+        if (existingIndex !== -1) {
+            console.log('✅ Prize found in random prizes at index:', existingIndex);
+            return randomPrizes;
+        }
+
+        // If not found, add it to the wheel with random prizes
+        const newPrize = {
+            ...prize,
+            label: prize.wallet_name === "GB"
+                ? `${prize.amount} Score`
+                : prize.wallet_name === "D"
+                    ? `${prize.amount} D`
+                    : `${prize.amount} ${prize.wallet_name}`,
+        };
+
+        console.log('➕ Adding scanned prize to random wheel:', newPrize);
+        return [...randomPrizes, newPrize];
+    }, [prize, randomPrizes]);
+
+    const segmentCount = wheelPrizes.length;
+
+    // Find the correct index of the prize
+    const prizeIndex =
+        prize && typeof prize.amount !== 'undefined'
+            ? wheelPrizes.findIndex(
+                p =>
+                    String(p.amount) === String(prize.amount) &&
+                    (p.wallet_name === prize.wallet_name || p.issuer === prize.issuer)
+            )
+            : -1;
+    const finalIndex = prizeIndex === -1 ? 0 : prizeIndex;
 
     useEffect(() => {
+        if (!prize || randomPrizes.length === 0) return;
+
         setIsVisible(true);
+
+        // Always reset canvas transform before new spin
+        if (canvasRef.current) {
+            canvasRef.current.style.transform = `rotate(0deg)`;
+        }
 
         const drawWheel = () => {
             const canvas = canvasRef.current;
             if (!canvas) return;
-
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
-
             const size = canvas.width;
             const radius = size / 2;
             const arc = (2 * Math.PI) / segmentCount;
 
             ctx.clearRect(0, 0, size, size);
 
-            // Wheel background and segments
-            prizes.forEach((prize, i) => {
-                const angle = i * arc;
+            // Draw the wheel with the first segment starting at the top (12 o'clock position)
+            wheelPrizes.forEach((prizeSeg, i) => {
+                // Start drawing from the top (12 o'clock)
+                const startAngle = -Math.PI / 2 + (i * arc);
+                const endAngle = startAngle + arc;
+
                 ctx.beginPath();
                 ctx.moveTo(radius, radius);
-                ctx.arc(radius, radius, radius - 12, angle, angle + arc);
+                ctx.arc(radius, radius, radius - 12, startAngle, endAngle);
                 ctx.closePath();
-
-                // Alternate colors: even = orange, odd = black
-                ctx.fillStyle = i % 2 === 0 ? "#ff6600" : "#000";
+                ctx.fillStyle = i % 2 === 0 ? '#ff6600' : '#000';
                 ctx.fill();
 
-                // Text
+                // Draw text in the middle of each segment
                 ctx.save();
                 ctx.translate(radius, radius);
-                ctx.rotate(angle + arc / 2);
-                ctx.fillStyle = "white";
-                ctx.font = 'bold 20px sans-serif';
-                ctx.textAlign = "right";
-                ctx.fillText(prize, radius - 30, 8);
+                const textAngle = startAngle + (arc / 2);
+                ctx.rotate(textAngle);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 16px sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText(prizeSeg.label, radius - 30, 8);
                 ctx.restore();
             });
 
-            // Lamps - 13 bulbs at original position (radius - 5) but fully visible
+            // Draw bulbs
             const bulbCount = 12;
-            const bulbRadius = 6; // Slightly smaller to ensure full visibility
-            const ringRadius = radius - 5; // Original position
-
-            // Adjust bulb positions to stay within canvas
+            const bulbRadius = 6;
+            const ringRadius = radius - 5;
             const effectiveRadius = Math.min(ringRadius, radius - bulbRadius - 2);
 
-            // Draw bulbs
             for (let i = 0; i < bulbCount; i++) {
                 const angle = (i / bulbCount) * 2 * Math.PI;
                 const x = radius + Math.cos(angle) * effectiveRadius;
                 const y = radius + Math.sin(angle) * effectiveRadius;
 
-                // Glow effect
                 ctx.beginPath();
-                ctx.shadowColor = "rgba(255, 255, 100, 0.9)";
+                ctx.shadowColor = 'rgba(255, 255, 100, 0.9)';
                 ctx.shadowBlur = 15;
-                ctx.fillStyle = "#fffac2";
+                ctx.fillStyle = '#fffac2';
                 ctx.arc(x, y, bulbRadius + 2, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Bulb core
                 ctx.beginPath();
                 ctx.shadowBlur = 0;
-                ctx.fillStyle = "#ffffff";
+                ctx.fillStyle = '#ffffff';
                 ctx.arc(x, y, bulbRadius, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Highlight
                 ctx.beginPath();
-                ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
                 ctx.arc(x - bulbRadius / 3, y - bulbRadius / 3, bulbRadius / 3, 0, Math.PI * 2);
                 ctx.fill();
             }
 
             // Center hub
             ctx.beginPath();
-            ctx.fillStyle = "white";
+            ctx.fillStyle = 'white';
             ctx.arc(radius, radius, 25, 0, 2 * Math.PI);
             ctx.fill();
 
             ctx.beginPath();
-            ctx.fillStyle = "black";
+            ctx.fillStyle = 'black';
             ctx.arc(radius, radius, 6, 0, 2 * Math.PI);
             ctx.fill();
         };
@@ -116,40 +223,50 @@ export default function SpinWheelModal({ onClose }: { onClose: (prize: string) =
         const spinWheel = () => {
             let startTime: number | null = null;
             const duration = 3000;
-            const spinAngle = Math.random() * 360 + 720;
+            const baseRotations = 5;
+            const segmentAngle = 360 / segmentCount;
+
+            // DEBUG: Log all prizes and their indices
+            console.log('🎡 Wheel prizes:', wheelPrizes.map((p, i) => `${i}: ${p.label}`));
+            console.log('🎯 Target prize:', prize?.label, 'at index:', finalIndex);
+
+            // Calculate spin to position target at bottom pointer (180°)
+            const targetSegmentCenter = (finalIndex * segmentAngle) + (segmentAngle / 2);
+            const rotationToTarget = 180 - targetSegmentCenter;
+            const totalRotation = baseRotations * 360 + rotationToTarget;
+
+            console.log('🔄 Spin calculation:', {
+                segmentCount,
+                segmentAngle,
+                targetSegmentCenter,
+                rotationToTarget,
+                totalRotation
+            });
 
             const animate = (timestamp: number) => {
                 if (!startTime) startTime = timestamp;
                 const elapsed = timestamp - startTime;
                 const progress = Math.min(elapsed / duration, 1);
-
                 const easedProgress = 1 - Math.pow(1 - progress, 3);
-                const rotation = easedProgress * spinAngle;
+                const rotation = easedProgress * totalRotation;
 
                 if (canvasRef.current) {
                     canvasRef.current.style.transform = `rotate(${rotation}deg)`;
                 }
-
                 if (progress < 1) {
                     animationRef.current = requestAnimationFrame(animate);
                 } else {
-                    const finalAngle = spinAngle % 360;
-                    const segmentAngle = 360 / segmentCount;
-                    const index = Math.floor(
-                        ((360 - finalAngle - segmentAngle / 2) % 360 / segmentAngle)
-                    );
-                    const prize = prizes[index >= 0 ? index : prizes.length + index];
+                    if (canvasRef.current) {
+                        canvasRef.current.style.transform = `rotate(${totalRotation}deg)`;
+                    }
 
-                    setResultPrize(prize);
+                    setResultPrize(wheelPrizes[finalIndex]);
                     setSpinning(false);
-                    fireConfetti(); // Add confetti here
-                    setTimeout(() => onClose(prize), 2000);
+                    fireConfetti();
                 }
             };
-
             animationRef.current = requestAnimationFrame(animate);
         };
-
 
         const timer = setTimeout(() => {
             drawWheel();
@@ -160,7 +277,22 @@ export default function SpinWheelModal({ onClose }: { onClose: (prize: string) =
             clearTimeout(timer);
             if (animationRef.current) cancelAnimationFrame(animationRef.current);
         };
-    }, [onClose]);
+    }, [finalIndex, prize, segmentCount, wheelPrizes, randomPrizes]);
+
+    useEffect(() => {
+        let to: NodeJS.Timeout;
+        if (!spinning && resultPrize) {
+            to = setTimeout(() => {
+                onClose(resultPrize.label);
+            }, 5000);
+        }
+        return () => {
+            if (to) clearTimeout(to);
+        };
+    }, [spinning, resultPrize, onClose]);
+
+    // Only render UI if prize exists and random prizes are loaded
+    if (!prize || randomPrizes.length === 0) return null;
 
     return (
         <Dialog
@@ -173,12 +305,18 @@ export default function SpinWheelModal({ onClose }: { onClose: (prize: string) =
                 <div className="absolute top-6 left-1/2 -translate-x-1/2">
                     <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg">
                         <span className="text-[#ff6600] font-bold text-xl">LOGO</span>
-                        {/* <img src="/path-to-your-logo.png" alt="Logo" className="w-12 h-12" /> */}
                     </div>
                 </div>
-                {/* Title */}
                 <h2 className="text-white text-xl font-bold my-3 font-[Poppins]">សូមស្វាគមន៍មកកាន់គេហទំព័រការស្កេន</h2>
                 <p className="text-white text-lg mb-4 font-bold font-[Poppins]">ផ្សងសំណាងរបស់យើង</p>
+
+                {/* Debug info - remove in production */}
+                <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-2 text-xs">
+                    <div>Target: {prize?.label}</div>
+                    <div>Index: {finalIndex}</div>
+                    <div>Segments: {segmentCount}</div>
+                    <div>Random prizes: {randomPrizes.length}</div>
+                </div>
 
                 <div className="relative w-[300px] h-[300px] mt-4">
                     <canvas
@@ -196,19 +334,25 @@ export default function SpinWheelModal({ onClose }: { onClose: (prize: string) =
                     {/* Pointer at bottom pointing to top */}
                     <div
                         className="absolute bottom-[-14px] left-1/2 -translate-x-1/2 w-0 h-3 
-                            border-l-[12px] border-l-transparent 
-                            border-r-[12px] border-r-transparent 
-                            border-b-[20px] border-b-white z-20"
+                border-l-[12px] border-l-transparent 
+                border-r-[12px] border-r-transparent 
+                border-b-[20px] border-b-white z-20"
                     />
                 </div>
-
                 {spinning && (
                     <p className="mt-4 text-lg font-semibold animate-pulse text-white">
                         កំពុងបង្វិលសូមរង់ចាំ...
                     </p>
                 )}
-
+                {!spinning && resultPrize && (
+                    <div className="mt-6 text-center">
+                        <h3 className="text-2xl font-bold text-yellow-300 mb-2">🎉 អបអរសាទរ!</h3>
+                        <p className="text-xl text-white">You won <b>{resultPrize.label}</b> from <b>{prize.wallet_name}</b>!</p>
+                    </div>
+                )}
             </Dialog.Panel>
         </Dialog>
     );
 }
+
+//Correct with 358 line code changes

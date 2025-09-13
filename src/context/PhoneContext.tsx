@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface Wallet {
   wallet_id: number;
@@ -42,6 +42,9 @@ interface PhoneProviderProps {
   children: ReactNode;
 }
 
+const USER_DATA_STORAGE_KEY = "userProfileData";
+
+
 export const PhoneProvider: React.FC<PhoneProviderProps> = ({ children }) => {
   const [tempPhoneNumber, setTempPhoneNumber] = useState('');
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -49,6 +52,18 @@ export const PhoneProvider: React.FC<PhoneProviderProps> = ({ children }) => {
   const confirmPhoneNumber = () => {
     // Any additional logic when phone number is confirmed
   };
+
+  // ✅ Hydrate userData from localStorage on app load
+  useEffect(() => {
+    const storedUserData = localStorage.getItem(USER_DATA_STORAGE_KEY);
+    if (storedUserData) {
+      try {
+        setUserData(JSON.parse(storedUserData));
+      } catch (e) {
+        console.error("Failed to parse stored user data", e);
+      }
+    }
+  }, []);
 
   return (
     <PhoneContext.Provider
