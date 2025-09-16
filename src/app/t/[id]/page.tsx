@@ -276,8 +276,6 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
                     onVerificationSuccess={handleVerificationSuccess}
                     isVerified={isVerified}
                     code={code}
-                    alreadyRedeemed={alreadyRedeemed}
-                    prizeRaw={prize}
                 />
             )}
         </div>
