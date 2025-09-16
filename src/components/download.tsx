@@ -5,16 +5,16 @@ import { FaDownload } from 'react-icons/fa';
 export default function DownloadAppCard() {
     return (
         <div className="bg-white rounded-xl p-4 text-center shadow-md drop-shadow-[0_-4px_6px_rgba(0,0,0,0.1)]">
-<h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 bg-clip-text text-transparent">
-  ទាញយក App
-</h2>
+            <h2 className="text-xl font-khmer font-bold mb-4 bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 bg-clip-text text-transparent">
+                Download App
+            </h2>
 
             <div className="bg-orange-500 rounded-xl p-9 text-white flex flex-col items-center justify-center hover:shadow-xl transition-shadow">
                 <FaDownload
                     size={45}
                     className="mb-3 animate-smooth-bounce"
                 />
-                <span className="text-lg font-bold">សូមចុចទីនេះ</span>
+                <span className="text-lg font-bold font-khmer">Click here !</span>
             </div>
         </div>
     );

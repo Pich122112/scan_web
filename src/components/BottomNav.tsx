@@ -71,11 +71,12 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
 
     // 4️⃣ Redeem API call: send FULL codePart!
     try {
-      const response = await fetch('https://redeemapi.piikmall.com/api/v2/redeem/scan', {
+      const response = await fetch('https://api.sandbox.gzb.app/api/v2/redeem/scan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Authorization': `Bearer ${localStorage.getItem('userAuthToken') || ''}`,
+          'X-App-Package': 'com.ganzberg.scanprizefront'
         },
         body: new URLSearchParams({ code: codePart }),
       });
@@ -151,25 +152,34 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
 
       {/* QR Scanner Modal */}
       {isScanning && (
-        <div className="fixed inset-0 bg-black z-50 flex flex-col">
+        <div className="fixed inset-0 z-50 bg-black flex items-center justify-center px-4">
           <button
             onClick={() => setIsScanning(false)}
             className="absolute top-4 right-4 text-white bg-black/50 p-2 rounded-full z-50"
           >
             <FaTimes className="text-2xl" />
           </button>
-          <Scanner
-            onScan={handleScan}
-            onError={handleError}
-            constraints={{ facingMode: { ideal: 'environment' } }}
-            styles={{
-              container: { width: '100%', height: '100%' },
-              video: { objectFit: 'cover', width: '100%', height: '100%' },
-            }}
-          />
+
+          <div className="w-full h-full md:w-[500px] md:h-[500px] max-w-full max-h-full rounded-lg overflow-hidden shadow-lg">
+            <Scanner
+              onScan={handleScan}
+              onError={handleError}
+              constraints={{ facingMode: { ideal: 'environment' } }}
+              styles={{
+                container: {
+                  width: '100%',
+                  height: '100%',
+                },
+                video: {
+                  objectFit: 'cover',
+                  width: '100%',
+                  height: '100%',
+                },
+              }}
+            />
+          </div>
         </div>
       )}
-
       {/* Error notification */}
       {errorMsg && (
         <div className="fixed bottom-4 right-4 bg-red-500 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm">
@@ -194,4 +204,4 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
   );
 }
 
-//Correct with 197 line code changes
+//Correct with 207 line code changes

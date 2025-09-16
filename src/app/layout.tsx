@@ -1,5 +1,7 @@
-import Navbar from '@/components/Navbar';
+// app/layout.tsx
+
 import './globals.css';
+import Navbar from '@/components/Navbar';
 import { PhoneProvider } from '@/context/PhoneContext';
 
 export const metadata = {
@@ -7,18 +9,14 @@ export const metadata = {
   description: 'Scan QR and earn points',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className="bg-gray-100">
-        <PhoneProvider> {/* ✅ Wrap the entire layout */}
+    <html lang="km">
+      <body className="bg-gray-100 font-khmer">
+        <PhoneProvider>
           <div className="flex flex-col md:flex-row min-h-screen">
             <div className="flex-1 w-full">
-              <Navbar /> {/* ✅ Now inside the context */}
+              <Navbar />
               <main className="pt-16 md:pt-20 px-4 pb-4 max-w-[1200px] mx-auto">
                 {children}
               </main>
@@ -29,5 +27,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-//Correct with 33 line code changes

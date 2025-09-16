@@ -6,11 +6,9 @@ import DiamondBanner from '@/components/DiamondBanner';
 import DownloadAppCard from '@/components/download';
 import { usePhone } from '@/context/PhoneContext';
 import BottomAppbar from '@/components/BottomNav';
-
 import fantaLogo from '@/assets/logo.png';
 import up7Logo from '@/assets/newbslogo.png';
 import spriteLogo from '@/assets/idol.png';
-
 import SpinWheelModal from '@/components/SpinWheelModal';
 import ResultDialog from '@/components/ResultDialog';
 import { fetchUserProfile, TOKEN_STORAGE_KEY, USER_DATA_STORAGE_KEY } from '@/services/auth_api';
@@ -21,6 +19,8 @@ export default function HomePage() {
   const [prize, setPrize] = useState<string | null>(null);
   const [isVerified, setIsVerified] = useState(false);
   const { userData, setUserData } = usePhone();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [isLoading, setIsLoading] = useState(true);
 
   async function refreshUserProfile() {
     const token = localStorage.getItem(TOKEN_STORAGE_KEY) || '';
@@ -36,40 +36,39 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    const storedPhone = localStorage.getItem('PHONE_STORAGE_KEY');
-    const storedUserData = localStorage.getItem('USER_DATA_STORAGE_KEY');
+    const checkUserVerification = async () => {
+      const storedPhone = localStorage.getItem('userVerifiedPhone'); // ✅ unified key
+      const storedUserData = localStorage.getItem(USER_DATA_STORAGE_KEY);
+      const token = localStorage.getItem(TOKEN_STORAGE_KEY);
 
-    if (!storedPhone || !storedUserData) {
-      setShowResultDialog(true);
-      setIsVerified(false);
-    } else {
-      try {
-        setUserData(JSON.parse(storedUserData));
-        setIsVerified(true);
-      } catch (e) {
-        console.error('Failed to parse stored user data', e);
+      if (!storedPhone || !storedUserData || !token) {
         setShowResultDialog(true);
         setIsVerified(false);
-      }
-    }
-  }, [setUserData]);
-
-  // Fetch profile from API once user is verified
-  useEffect(() => {
-    async function fetchAndStoreProfile() {
-      const token = localStorage.getItem(TOKEN_STORAGE_KEY) || '';
-      if (isVerified && token) {
+      } else {
         try {
           const profileData = await fetchUserProfile(token);
-          setUserData(profileData.data || profileData);
-          localStorage.setItem(USER_DATA_STORAGE_KEY, JSON.stringify(profileData.data || profileData));
+          if (profileData.success) {
+            setUserData(profileData.data || profileData);
+            localStorage.setItem(USER_DATA_STORAGE_KEY, JSON.stringify(profileData.data || profileData));
+            setIsVerified(true);
+          } else {
+            localStorage.removeItem(TOKEN_STORAGE_KEY);
+            localStorage.removeItem(USER_DATA_STORAGE_KEY);
+            localStorage.removeItem('userVerifiedPhone'); // ✅ match key
+            setShowResultDialog(true);
+            setIsVerified(false);
+          }
         } catch (e) {
-          console.error('Failed to fetch user profile:', e);
+          console.error('Failed to verify user token', e);
+          setShowResultDialog(true);
+          setIsVerified(false);
         }
       }
-    }
-    fetchAndStoreProfile();
-  }, [isVerified, setUserData]);
+      setIsLoading(false);
+    };
+
+    checkUserVerification();
+  }, [setUserData]);
 
   useEffect(() => {
     if (!isVerified) return;
@@ -82,7 +81,7 @@ export default function HomePage() {
     setShowSpinWheel(false);
     setShowResultDialog(true);
     localStorage.setItem('hasSpunWheel', 'true');
-    refreshUserProfile(); // <-- Refresh after winning spin
+    refreshUserProfile();
   };
 
   const handleCloseResult = () => {
@@ -90,7 +89,6 @@ export default function HomePage() {
     setIsVerified(true);
   };
 
-  // Extract balances safely by code
   const gbBalance = userData?.wallets?.find(w => w.wallet_code === '1')?.balance || 0;
   const BSBalance = userData?.wallets?.find(w => w.wallet_code === '2')?.balance || 0;
   const idBalance = userData?.wallets?.find(w => w.wallet_code === '3')?.balance || 0;
@@ -99,7 +97,14 @@ export default function HomePage() {
   return (
     <div className="space-y-8">
       {showResultDialog && (
-        <ResultDialog prize={prize || ''} onClose={handleCloseResult} />
+        <ResultDialog
+          prize={prize || ''}
+          errorMsg={null}
+          onClose={handleCloseResult}
+          onVerificationSuccess={() => {}}
+          isVerified={isVerified}
+          code=""
+        />
       )}
 
       {isVerified && (
@@ -122,3 +127,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+//Correct with 130 line code changes

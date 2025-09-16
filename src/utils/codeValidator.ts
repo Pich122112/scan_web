@@ -21,7 +21,7 @@ export class CodeValidator {
       const expectedSignature = this.generateSignature(naturalCode);
 
       return providedSignature === expectedSignature;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       return false;
     }
