@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ResultDialog from '@/components/ResultDialog';
 import { TOKEN_STORAGE_KEY } from '@/services/auth_api';
+import { CodeValidator } from '@/utils/codeValidator';
 
 interface PrizeData {
     issuer: string;
@@ -15,10 +16,7 @@ interface PrizeData {
     status?: string;
 }
 
-const isValidCode = (code: string): boolean => {
-    const pattern = /^GAC\d{3}C[A-Za-z0-9]+$/;
-    return pattern.test(code);
-};
+
 
 export default function TPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
@@ -28,6 +26,7 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
     const [showResultDialog, setShowResultDialog] = useState(false);
     const [isVerified, setIsVerified] = useState(false);
     const [code, setCode] = useState<string>('');
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [alreadyRedeemed, setAlreadyRedeemed] = useState(false);
 
     useEffect(() => {
@@ -67,14 +66,19 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
             setLoading(true);
             setCode(cleanCode);
 
-            // Accept all possible code formats
-            const pattern = /^[A-Z]{2,4}\d{3,4}C[A-Za-z0-9]+$/;
-            if (!pattern.test(cleanCode)) {
+            // ✅ Use strong validator instead of regex-only
+            if (!CodeValidator.isValidCode(cleanCode)) {
                 setErrorMsg('❌ This is not our code format.');
                 setPrize(null);
                 setAlreadyRedeemed(false);
                 setLoading(false);
                 setShowResultDialog(true);
+                // 🚀 Auto-redirect after 3 seconds (same as "already used" case)
+                setTimeout(() => {
+                    setShowResultDialog(false);
+                    setPrize(null);
+                    router.replace('/');
+                }, 5000);
                 return;
             }
 
@@ -150,12 +154,13 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
                     return;
                 }
 
+                // ✅ Always show the prize, even if user is not verified
                 setPrize(prizeObj);
                 setErrorMsg(null);
                 setAlreadyRedeemed(false);
                 setLoading(false);
                 setShowResultDialog(true);
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
             } catch (error) {
                 // Only for real network or other code errors!
                 setErrorMsg('❌ Failed to process code.');
@@ -167,7 +172,7 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
 
             setIsVerified(!!localStorage.getItem('userVerifiedPhone'));
         })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [params]);
 
     // Remove auto route from dialog close (user must click to go homepage)
@@ -186,10 +191,6 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
 
     const redeemPrize = async () => {
         try {
-            if (!isValidCode(code)) {
-                setErrorMsg('❌ This is not our code format.');
-                return;
-            }
             // Check code status again before actual redeem
             const checkRes = await fetch(`https://api.sandbox.gzb.app/api/v2/redeem-check?code=${encodeURIComponent(code)}`);
             if (!checkRes.ok) throw new Error(`Check API error: ${checkRes.status}`);
@@ -264,7 +265,7 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
             {loading && (
                 <div className="absolute flex flex-col items-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mb-4"></div>
-                    <p>🔄 Checking your code...</p>
+                    <p>🔄 Checking your code</p>
                 </div>
             )}
 
@@ -276,8 +277,6 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
                     onVerificationSuccess={handleVerificationSuccess}
                     isVerified={isVerified}
                     code={code}
-                    alreadyRedeemed={alreadyRedeemed}
-                    prizeRaw={prize}
                 />
             )}
         </div>

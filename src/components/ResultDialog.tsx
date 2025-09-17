@@ -8,7 +8,7 @@ import { ArrowRightIcon } from '@heroicons/react/24/solid';
 import { usePhone } from '@/context/PhoneContext';
 import { requestOtp, verifyOtp, fetchUserProfile, PHONE_STORAGE_KEY, TOKEN_STORAGE_KEY, USER_DATA_STORAGE_KEY } from '@/services/auth_api';
 import { DeviceUUID } from '@/utils/deviceUUID';
-import { MdArrowForward } from "react-icons/md";
+import { MdArrowForward, MdKeyboardArrowDown, MdKeyboardArrowUp } from "react-icons/md";
 
 const countryCodes = [
   { code: '855', name: 'Cambodia', flag: '🇰🇭' },
@@ -75,7 +75,7 @@ export default function ResultDialog({
 
   const handleRequestOtp = async () => {
     if (!phoneNumber.trim()) {
-      setError('សូមបញ្ចូលលេខទូរស័ព្ទរបស់អ្នក។');
+      setError('Please Enter Your Phone Number');
       return;
     }
     if (phoneNumber.length < 8) {
@@ -197,7 +197,7 @@ export default function ResultDialog({
       className="fixed inset-0 z-50 flex items-center justify-center bg-orange-500 bg-opacity-90 overflow-auto px-2"
     >
       <div className="absolute inset-0 bg-orange-500" />
-      <div className="absolute top-20 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+      <div className="absolute top-20 mt-5 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
         <div className="w-20 h-20 rounded-full overflow-hidden shadow-lg bg-white flex items-center justify-center">
           <Image src={logo} alt="GANZBERG Logo" width={80} height={80} className="object-contain" />
         </div>
@@ -230,27 +230,38 @@ export default function ResultDialog({
           </>
         ) : (
           <>
-            <div className="text-gray-800 font-medium text-base mb-2">
-              សូមបញ្ចូលលេខទូរស័ព្ទដើម្បីចុះឈ្មោះ
+            {/* 🎁 Show prize first if available */}
+            {/* 🎁 Show prize first if available */}
+            {prize && (
+              <div className="mb-6 text-center">
+                <div className="text-orange-500 font-extrabold text-4xl mt-2">
+                  {prize}
+                </div>
+              </div>
+            )}
+
+            {/* Flexible register text */}
+            <div className="text-gray-800 font-medium text-lg mb-2 text-center">
+              {prize ? "Register your account to get score" : "Register your account"}
             </div>
-            <div className="mt-5">
-              <div className="flex items-center space-x-2">
+
+            <div className="mt-8">
+              <div className="flex items-center space-x-1">
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => setShowCountryDropdown(!showCountryDropdown)}
-                    className="flex items-center space-x-1 px-3 py-3 border border-gray-300 rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 min-w-[80px]"
+                    className="flex items-center space-x-2 px-3 py-3 border border-gray-300 rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 min-w-[100px] shadow-sm"
                   >
                     <span>{selectedCountry.flag}</span>
-                    <span className='text-gray-900'>+{selectedCountry.code}</span>
-                    <svg
-                      className={`w-4 h-4 transition-transform ${showCountryDropdown ? 'rotate-180' : ''}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
+                    <span className="text-gray-900 font-bold">+{selectedCountry.code}</span>
+
+                    {/* Custom Arrow */}
+                    {showCountryDropdown ? (
+                      <MdKeyboardArrowUp className="w-5 h-5 text-gray-600 transition-transform" />
+                    ) : (
+                      <MdKeyboardArrowDown className="w-5 h-5 text-gray-600 transition-transform" />
+                    )}
                   </button>
                   {showCountryDropdown && (
                     <div className="absolute top-full left-0 text-gray-900 mt-1 w-48 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
@@ -273,7 +284,7 @@ export default function ResultDialog({
                   type="tel"
                   value={phoneNumber}
                   onChange={handlePhoneNumberChange}
-                  placeholder="បញ្ចូលលេខទូរស័ព្ទអ្នក"
+                  placeholder="Enter your phone number"
                   className={`flex-1 border ${error ? 'border-red-500' : 'border-gray-300'} rounded-full px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-400`}
                   maxLength={15}
                 />
@@ -288,20 +299,20 @@ export default function ResultDialog({
                     setOtp(e.target.value.replace(/[^0-9]/g, '').slice(0, 4));
                     setError('');
                   }}
-                  placeholder="បញ្ចូលកូដ OTP"
+                  placeholder="Get Code OTP"
                   className="w-full border border-gray-300 rounded-full px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-400"
                   maxLength={4}
                 />
               </div>
             )}
-            <div className="mt-6">
+            <div className="mt-10">
               {!otpSent ? (
                 <button
                   onClick={handleRequestOtp}
                   disabled={isLoading}
                   className="w-full bg-orange-500 text-white font-semibold rounded-full flex items-center justify-center py-3 hover:bg-orange-600 transition disabled:opacity-50"
                 >
-                  {isLoading ? 'កំពុងផ្ញើ...' : 'យកកូដ'}
+                  {isLoading ? 'Sending OTP...' : 'Get Code OTP'}
                   <ArrowRightIcon className="w-4 h-4 ml-2" />
                 </button>
               ) : (
@@ -310,7 +321,7 @@ export default function ResultDialog({
                   disabled={isLoading}
                   className="w-full bg-green-500 text-white font-semibold rounded-full flex items-center justify-center py-3 hover:bg-green-600 transition disabled:opacity-50"
                 >
-                  {isLoading ? 'កំពុងផ្ទៀងផ្ទាត់...' : 'បញ្ជាក់'}
+                  {isLoading ? 'Verifying OTP...' : 'Verify OTP'}
                   <ArrowRightIcon className="w-4 h-4 ml-2" />
                 </button>
               )}
@@ -327,4 +338,4 @@ export default function ResultDialog({
   );
 }
 
-//Correct with 330 line code change 
+//Correct with 342 line code changes
