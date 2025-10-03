@@ -5,7 +5,7 @@ import Navbar from '@/components/Navbar';
 import { PhoneProvider } from '@/context/PhoneContext';
 
 export const metadata = {
-  title: 'ScanPrize Web',
+  title: 'GANZBERG SCAN',
   description: 'Scan QR and earn points',
 };
 
