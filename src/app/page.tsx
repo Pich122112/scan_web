@@ -101,7 +101,7 @@ export default function HomePage() {
           prize={prize || ''}
           errorMsg={null}
           onClose={handleCloseResult}
-          onVerificationSuccess={() => {}}
+          onVerificationSuccess={() => { }}
           isVerified={isVerified}
           code=""
         />

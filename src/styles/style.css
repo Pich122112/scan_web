@@ -1,0 +1,159 @@
+/* global.css */
+/* empty now */
+
+/* globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Responsive typography */
+html {
+  font-size: 16px;
+}
+
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Prevent horizontal overflow */
+body {
+  overflow-x: hidden;
+}
+
+/* Responsive image defaults */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+@keyframes scan {
+  0% {
+    top: 40px;
+    opacity: 0.2;
+  }
+
+  50% {
+    top: calc(100% - 60px);
+    opacity: 1;
+  }
+
+  100% {
+    top: 40px;
+    opacity: 0.2;
+  }
+}
+
+.animate-scan {
+  animation: scan 2.5s linear infinite;
+}
+
+/* ===== Customize QR Scanner Border Color ===== */
+.qr-scanner__bounding-box,
+.qr-scanner__bounding-line {
+  border-color: #facc15 !important;
+  /* yellow-400 */
+  stroke: #facc15 !important;
+  /* for SVG or canvas borders */
+}
+
+/* scan line animation */
+@keyframes scanY {
+  0% {
+    transform: translateY(-40%);
+    opacity: 0.2;
+  }
+
+  50% {
+    transform: translateY(40%);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(-40%);
+    opacity: 0.2;
+  }
+}
+
+.animate-scanY {
+  animation: scanY 2.2s linear infinite;
+}
+
+/* small yellow glow for the frame */
+.scan-frame-glow {
+  box-shadow: 0 0 30px rgba(250, 204, 21, 0.45);
+}
+
+@keyframes scanY {
+  0% {
+    transform: translateY(-40%);
+    opacity: 0.2;
+  }
+
+  50% {
+    transform: translateY(40%);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(-40%);
+    opacity: 0.2;
+  }
+}
+
+.animate-scanY {
+  animation: scanY 2.2s linear infinite;
+}
+
+/* === Ensure scanning frame always on top of video === */
+.scan-frame {
+  position: relative;
+  z-index: 50;
+}
+
+.scan-corner {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-color: #facc15;
+  /* Tailwind yellow-400 */
+  border-width: 2px;
+  border-style: solid;
+  box-shadow: 0 0 10px rgba(250, 204, 21, 0.4);
+}

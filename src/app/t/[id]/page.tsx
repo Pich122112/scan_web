@@ -88,7 +88,27 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
                     `https://api.sandbox.gzb.app/api/v2/redeem-check?code=${encodeURIComponent(cleanCode)}`
                 );
                 const checkData = await checkRes.json();
+                // --- Add this block ---
+                const isThankYou =
+                    (typeof checkData.message === 'string' && checkData.message.trim().toLowerCase() === 'thank you!'.toLowerCase()) ||
+                    (checkData.data && typeof checkData.data === 'object' && typeof checkData.data.type === 'string' && checkData.data.type.trim().toLowerCase() === 'thank you!'.toLowerCase());
 
+                if (isThankYou) {
+                    setPrize({
+                        issuer: '',
+                        amount: 0,
+                        wallet_id: 0,
+                        wallet_name: '',
+                        new_amount: 0,
+                        label: 'Thank You',
+                        status: ''
+                    });
+                    setErrorMsg(null);
+                    setAlreadyRedeemed(false);
+                    setLoading(false);
+                    setShowResultDialog(true);
+                    return;
+                }
                 // Error/invalid/redeemed code: Show dialog, do NOT auto-redirect
                 if (
                     !checkData.success ||
@@ -97,6 +117,7 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
                     (checkData.message && (
                         checkData.message.toLowerCase().includes('already redeemed') ||
                         checkData.message.toLowerCase().includes('already used') ||
+                        checkData.message.toLowerCase().includes('expired code') ||
                         checkData.message.toLowerCase().includes('could not be found')
                     ))
                 ) {
@@ -195,6 +216,27 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
             const checkRes = await fetch(`https://api.sandbox.gzb.app/api/v2/redeem-check?code=${encodeURIComponent(code)}`);
             if (!checkRes.ok) throw new Error(`Check API error: ${checkRes.status}`);
             const checkData = await checkRes.json();
+            // --- Add this block ---
+            const isThankYou =
+                (typeof checkData.message === 'string' && checkData.message.trim().toLowerCase() === 'thank you!'.toLowerCase()) ||
+                (checkData.data && typeof checkData.data === 'object' && typeof checkData.data.type === 'string' && checkData.data.type.trim().toLowerCase() === 'thank you!'.toLowerCase());
+
+            if (isThankYou) {
+                setPrize({
+                    issuer: '',
+                    amount: 0,
+                    wallet_id: 0,
+                    wallet_name: '',
+                    new_amount: 0,
+                    label: 'Thank You',
+                    status: ''
+                });
+                setErrorMsg(null);
+                setAlreadyRedeemed(false);
+                setLoading(false);
+                setShowResultDialog(true);
+                return;
+            }
             if (!checkData.success || !checkData.data) {
                 setPrize(null);
                 setErrorMsg(checkData.message || '❌ Invalid or already redeemed code.');

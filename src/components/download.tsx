@@ -9,13 +9,19 @@ export default function DownloadAppCard() {
                 Download App
             </h2>
 
-            <div className="bg-orange-500 rounded-xl p-9 text-white flex flex-col items-center justify-center hover:shadow-xl transition-shadow">
+            <a
+                href="https://example.com/sample-app.apk"
+                download
+                className="block bg-orange-500 rounded-xl p-9 text-white flex flex-col items-center justify-center hover:shadow-xl transition-shadow"
+            >
                 <FaDownload
                     size={45}
                     className="mb-3 animate-smooth-bounce"
                 />
-                <span className="text-lg font-bold font-khmer">Click here !</span>
-            </div>
+                <span className="text-lg font-bold font-khmer">Click here!</span>
+            </a>
+
         </div>
     );
+
 }

@@ -1,3 +1,4 @@
 PS D:\NextJs Project\scanprize-web> ngrok http 3000
 PS D:\NextJs Project\scanprize-web> 
 PS D:\NextJs Project\scanprize-web> npm run dev
+ cloudflared tunnel --url http://localhost:3000

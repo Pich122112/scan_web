@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { Dialog } from '@headlessui/react';
 import confetti from 'canvas-confetti';
-
+import Image from 'next/image';
+import logo from '@/assets/logo.png';
 interface PrizeType {
     label: string;
     issuer: string;
@@ -302,22 +303,19 @@ export default function SpinWheelModal({ onClose, prize }: SpinWheelModalProps) 
         >
             <Dialog.Panel className="relative w-full h-full flex flex-col items-center justify-center bg-[#ff6600]">
                 {/* Logo at the top */}
-                <div className="absolute top-6 left-1/2 -translate-x-1/2">
-                    <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg">
-                        <span className="text-[#ff6600] font-bold text-xl">LOGO</span>
-                    </div>
-                </div>
+              <div className="absolute top-6 left-1/2 -translate-x-1/2">
+  <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden animate-zoom">
+    <Image
+      src={logo}
+      alt="Logo"
+      width={96}
+      height={96}
+      className="object-contain"
+    />
+  </div>
+</div>
                 <h2 className="text-white text-xl font-bold my-3 font-[Poppins]">សូមស្វាគមន៍មកកាន់គេហទំព័រការស្កេន</h2>
                 <p className="text-white text-lg mb-4 font-bold font-[Poppins]">ផ្សងសំណាងរបស់យើង</p>
-
-                {/* Debug info - remove in production */}
-                <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-2 text-xs">
-                    <div>Target: {prize?.label}</div>
-                    <div>Index: {finalIndex}</div>
-                    <div>Segments: {segmentCount}</div>
-                    <div>Random prizes: {randomPrizes.length}</div>
-                </div>
-
                 <div className="relative w-[300px] h-[300px] mt-4">
                     <canvas
                         ref={canvasRef}
