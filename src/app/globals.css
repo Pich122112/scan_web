@@ -1,14 +1,14 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
 
-
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #000000;
+  /* pure black */
+  --foreground: #ffffff;
   --font-sans: 'Poppins', sans-serif;
-
 }
-/* globals.css */
+
+/* Khmer fonts */
 @font-face {
   font-family: 'NotoSansKhmer';
   src: url('/fonts/NotoSansKhmer-Regular.ttf') format('truetype');
@@ -23,19 +23,68 @@
   font-style: normal;
 }
 
+/* --- Global Layout --- */
+html,
+body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+
+  background-color: #000000 !important;
+  /* Pure black background */
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  -webkit-overflow-scrolling: touch;
+  background-attachment: fixed;
+  background-size: cover;
+
+  /* Prevent white flash on mobile Safari / Chrome */
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* React root container */
+#root,
+#__next {
+  min-height: 100%;
+  background-color: #000000 !important;
+  /* Solid black */
+}
+
+/* Glassy container helper */
+.glassy-box {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 18px;
+  box-shadow: 0 6px 24px rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+/* Optional hover effect */
+.glassy-box:hover {
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(255, 255, 255, 0.08);
+}
+
+/* Dark mode still stays black */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #000000;
     --foreground: #ededed;
+  }
+
+  body,
+  #root,
+  #__next {
+    background-color: #000000 !important;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
+/* Smooth motion styles (optional) */
 @keyframes smooth-bounce {
 
   0%,
@@ -53,9 +102,12 @@ body {
 }
 
 @keyframes zoom-in-out {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.2);
   }
@@ -64,4 +116,3 @@ body {
 .animate-zoom-in-out {
   animation: zoom-in-out 1.2s ease-in-out infinite;
 }
-

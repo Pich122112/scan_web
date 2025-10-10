@@ -11,11 +11,11 @@ export default function Navbar() {
     const { tempPhoneNumber, userData } = usePhone();
     const [showDialog, setShowDialog] = useState(false);
 
-    // ✅ Only show Navbar if the user is verified (has userData)
+    // ✅ Only show Navbar if user is logged in
     if (!userData) return null;
 
     const rawPhone = userData?.phone_number || tempPhoneNumber;
-    const displayPhone = rawPhone ? formatPhoneNumber(rawPhone) : null;
+    const displayPhone = rawPhone ? formatPhoneNumber(rawPhone) : 'Guest';
 
     const getGreeting = () => {
         const hour = new Date().getHours();
@@ -24,52 +24,54 @@ export default function Navbar() {
         return "Good Night 🌙";
     };
 
-    // ✅ Dialog handler
     const handleDialog = () => {
         setShowDialog(true);
-        setTimeout(() => setShowDialog(false), 2000); // auto close after 2 seconds
+        setTimeout(() => setShowDialog(false), 2000);
     };
 
     return (
         <>
-            <nav className="bg-orange-500 w-full fixed top-0 left-0 right-0 z-50">
-                <div className="max-w-[1200px] w-full mx-auto py-3 px-4 flex flex-row items-center justify-between flex-wrap gap-2">
-                    {/* Left: Logo and Greeting */}
+            {/* 🧊 Navbar */}
+            <nav className="fixed top-0 left-0 right-0 z-50 bg-white/10 backdrop-blur-xl border-b border-white/20 shadow-[0_4px_20px_rgba(255,255,255,0.1)]">
+                <div className="max-w-[1200px] mx-auto py-3 px-4 flex items-center justify-between flex-wrap gap-3">
+                    {/* Left Section: Logo + Greeting */}
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center p-1 border-2 border-white/30">
+                        <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center p-1 border border-white/30 shadow-inner backdrop-blur-md">
                             <Image
                                 src={logo}
                                 alt="Logo"
-                                width={50}
-                                height={50}
-                                className="object-contain"
+                                width={40}
+                                height={40}
+                                className="object-contain rounded-full"
                             />
                         </div>
                         <div className="text-white">
-                            <p className="font-semibold text-white/90 text-sm sm:text-base">
+                            <p className="font-medium text-sm sm:text-base text-white/90">
                                 {getGreeting()}
                             </p>
-                            <p className="font-bold text-white text-sm sm:text-xl">
-                                {displayPhone || 'Guest'}
+                            <p className="font-bold text-lg sm:text-xl tracking-wide drop-shadow-sm">
+                                {displayPhone}
                             </p>
                         </div>
                     </div>
 
-                    {/* Right: Icons */}
-                    <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                        {/* Notification Icon */}
+                    {/* Right Section: Action Icons */}
+                    <div className="flex items-center gap-3">
+                        {/* 🔔 Notification */}
                         <button
                             onClick={handleDialog}
-                            className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all duration-200 relative"
+                            className="p-2 bg-white/15 hover:bg-white/25 backdrop-blur-md rounded-full 
+                                       transition duration-200 relative shadow-md"
                         >
                             <FaBell className="text-lg text-white" />
-                            <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                            <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white" />
                         </button>
 
-                        {/* QR Code Icon */}
+                        {/* 🧾 QR Code */}
                         <button
                             onClick={handleDialog}
-                            className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all duration-200"
+                            className="p-2 bg-white/15 hover:bg-white/25 backdrop-blur-md rounded-full 
+                                       transition duration-200 shadow-md"
                         >
                             <FaQrcode className="text-lg text-white" />
                         </button>
@@ -77,25 +79,35 @@ export default function Navbar() {
                 </div>
             </nav>
 
-            {/* ✅ Dialog message */}
+            {/* 📱 Dialog Overlay */}
             {showDialog && (
-                <div className="fixed inset-0 flex items-center justify-center z-[9999] bg-black/30 backdrop-blur-sm animate-fadeIn">
-                    <div className="bg-white/95 rounded-2xl shadow-xl px-8 py-5 text-center border border-gray-100 transform transition-all scale-100 animate-slideUp">
-                        <div className="flex flex-col items-center space-y-3">
-                            <div className="w-12 h-12 flex items-center justify-center bg-orange-100 text-orange-500 rounded-full text-2xl">
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-md animate-fadeIn">
+                    <div className="relative bg-white/10 backdrop-blur-2xl border border-white/30 rounded-3xl 
+                                    shadow-2xl px-8 py-6 text-center text-white transform transition-all animate-slideUp">
+                        {/* Soft inner glow */}
+                        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-white/10 via-transparent to-white/5 rounded-3xl" />
+
+                        <div className="flex flex-col items-center space-y-4">
+                            <div className="w-14 h-14 flex items-center justify-center bg-white/25 text-orange-300 
+                                            rounded-full shadow-inner backdrop-blur-lg text-3xl">
                                 📱
                             </div>
-                            <p className="text-gray-800 font-semibold text-lg">
-                                Available on App
+
+                            <p className="font-bold text-xl drop-shadow-sm">Available on App</p>
+                            <p className="text-white/80 text-sm max-w-[250px]">
+                                This feature is accessible only from our mobile app.
                             </p>
-                            <p className="text-gray-500 text-sm">
-                                This feature is accessible from the mobile app.
-                            </p>
+
+                            <button
+                                onClick={() => setShowDialog(false)}
+                                className="mt-4 bg-white/20 hover:bg-white/40 text-white font-semibold px-6 py-2 rounded-full transition backdrop-blur-md shadow-md"
+                            >
+                                Got it
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
-
         </>
     );
 }

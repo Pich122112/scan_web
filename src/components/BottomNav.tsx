@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { RiQrScanFill } from 'react-icons/ri';
-import { FaHome, FaFacebookMessenger, FaTimes, FaEnvelope, FaPhone } from 'react-icons/fa';
+import { FaHome, FaFacebookMessenger, FaEnvelope, FaPhone, FaTimes } from 'react-icons/fa';
 import { Scanner } from '@yudiel/react-qr-scanner';
 import { CodeValidator } from '@/utils/codeValidator';
 import SpinWheelModal from './SpinWheelModal';
@@ -20,7 +20,7 @@ export interface PrizeData {
   wallet_name: string;
   new_amount: number;
   label: string;
-
+  type?: string;
 }
 
 type BottomNavProps = {
@@ -34,6 +34,8 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
   const [showWheel, setShowWheel] = useState(false);
   const [torchOn, setTorchOn] = useState(false);
   const [isContactOpen, setIsContactOpen] = useState(false);
+  const [showThankYou, setShowThankYou] = useState(false);
+
 
   // Use the FULL code as the "used" key!
   const [usedCodes, setUsedCodes] = useState<Set<string>>(new Set());
@@ -68,7 +70,7 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
 
     // Use full codePart for used check!
     if (usedCodes.has(codePart)) {
-      setErrorMsg('⚠️ Code already redeemed.');
+      setErrorMsg('⚠️ QR already use.');
       setTimeout(() => setErrorMsg(null), 3000);
       return;
     }
@@ -94,19 +96,51 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
       const data: ApiResponse = await response.json();
 
       if (data.success && data.data && typeof data.data === 'object' && !Array.isArray(data.data)) {
-        // Generate label if not provided by API
-        const prizeData = data.data;
-        if (!prizeData.label) {
-          prizeData.label = prizeData.wallet_name === "GB"
-            ? `${prizeData.amount} Score`
-            : prizeData.wallet_name === "D"
-              ? `${prizeData.amount} D`
-              : `${prizeData.amount} ${prizeData.wallet_name}`;
+
+        // ✅ Handle Thank You separately (always show, ignore usedCodes)
+        if (
+          data.message?.toLowerCase().includes('thank you') ||
+          data.data?.type?.toLowerCase().includes('thank you')
+        ) {
+          setShowThankYou(true);
+          setTimeout(() => setShowThankYou(false), 3000);
+          return; // Don't check usedCodes
         }
-        // Use full codePart for used check!
+        // Normal prize flow: prevent multiple use
+        if (usedCodes.has(codePart)) {
+          setErrorMsg('⚠️ QR already used.');
+          setTimeout(() => setErrorMsg(null), 3000);
+          return;
+        }
+
+        const prizeData = data.data;
+
+        if (!prizeData.label) {
+          const wallet = prizeData.wallet_name || '';
+
+          switch (wallet) {
+            case 'GB':
+            case 'ID':
+            case 'BS':
+              prizeData.label = `${prizeData.amount} Score (${wallet})`;
+              break;
+            case 'DM':
+              prizeData.label = `${prizeData.amount} Diamond (${wallet})`;
+              break;
+            case 'D':
+              prizeData.label = `${prizeData.amount} D (${wallet})`;
+              break;
+            default:
+              prizeData.label = prizeData.amount
+                ? `${prizeData.amount} ${wallet}`.trim()
+                : 'Prize';
+          }
+        }
+
         setUsedCodes(prev => new Set(prev).add(codePart));
-        setScanResult(data.data);
+        setScanResult(prizeData);
         setShowWheel(true);
+
       } else {
         setErrorMsg(data.message || '❌ Invalid or already redeemed code.');
         setTimeout(() => setErrorMsg(null), 3000);
@@ -125,33 +159,55 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
   const handleWheelClose = () => {
     setShowWheel(false);
     setScanResult(null);
-    if (onPrizeWin) onPrizeWin(); // <-- Refresh wallet after prize
+    if (onPrizeWin) onPrizeWin(); 
   };
 
   return (
     <>
       {/* Bottom bar with floating button */}
-      <div className="bottom-0 left-0 w-full z-40 mt-5 border border-4 border-white rounded-full shadow-lg">
+      <div className="fixed bottom-0 left-0 w-full z-40 mt-5 mb-4">
         <div className="max-w-[1200px] mx-auto">
-          <div className="relative flex items-center justify-between bg-orange-500 rounded-full px-4 sm:px-6 py-4 shadow-lg w-full">
-            <button className="flex items-center gap-2 bg-black text-white border border-white px-4 sm:px-6 py-2 rounded-full text-sm font-semibold shadow-md">
+          <div
+            className="relative flex items-center justify-between 
+                 rounded-full px-4 sm:px-6 py-6 w-full
+                 bg-white/10 backdrop-blur-2xl border border-white/20 
+                 shadow-[0_8px_32px_rgba(255,255,255,0.15)]
+                 hover:shadow-[0_8px_48px_rgba(255,255,255,0.25)]
+                 transition-all duration-300"
+          >
+            {/* Left - Home */}
+            <button className="flex items-center gap-2 bg-white/10 hover:bg-white/30 
+                         text-white border border-white/20 px-4 sm:px-6 py-2 
+                         rounded-full text-sm font-semibold shadow-md 
+                         backdrop-blur-md transition">
               <FaHome className="text-base" />
               Home
             </button>
+
+            {/* Right - Contact */}
             <button
-              className="flex items-center gap-2 text-white border border-white px-3 sm:px-6 py-2 rounded-full text-sm font-semibold shadow-md"
+              className="flex items-center gap-2 text-white bg-white/10 hover:bg-white/30 
+                   border border-white/20 px-3 sm:px-6 py-2 rounded-full 
+                   text-sm font-semibold shadow-md backdrop-blur-md transition"
               onClick={() => setIsContactOpen(true)}
             >
               <FaFacebookMessenger className="text-base" />
               Contact
             </button>
 
-            <div className="absolute bg-orange-500 rounded-full left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            {/* Center Floating Glassy QR Button */}
+            <div
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 
+                   rounded-full bg-gradient-to-br from-orange-400/60 via-pink-500/40 to-purple-500/50
+                   p-[3px] shadow-[0_8px_24px_rgba(255,255,255,0.2)] backdrop-blur-xl"
+            >
               <button
                 onClick={() => setIsScanning(true)}
-                className="bg-orange p-5 rounded-full border-4 border-white shadow-xl hover:scale-105 transition"
+                className="bg-white/20 hover:bg-white/40 rounded-full border border-white/30
+                     p-5 shadow-[0_8px_20px_rgba(251,96,0,0.3)] transition-transform
+                     duration-300 hover:scale-105 backdrop-blur-2xl"
               >
-                <RiQrScanFill className="text-white text-5xl" />
+                <RiQrScanFill className="text-white text-5xl drop-shadow-[0_4px_8px_rgba(255,255,255,0.3)]" />
               </button>
             </div>
           </div>
@@ -163,12 +219,15 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
         <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
           {/* Error message at top */}
           {errorMsg && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-600/95 text-white flex items-center justify-between px-4 py-3 rounded-lg shadow-lg z-50 max-w-md md:max-w-sm space-x-3 animate-slide-down">
-              {/* Error text */}
-              <span className="flex-1 text-4lg font-medium">{errorMsg}</span>
+            <div className="fixed top-4 left-0 w-full px-4 z-50 mt-14">
+              <div className="bg-red-600/95 text-white flex items-center justify-center px-6 py-4 rounded-lg shadow-lg animate-slide-down space-x-2">
+                {errorMsg === 'Incorrect QR !' && (
+                  <FaTimes className="text-white text-xl" />
+                )}
+                <span className="text-lg font-medium">{errorMsg}</span>
+              </div>
             </div>
           )}
-
 
           {/* Close button */}
           <button
@@ -234,48 +293,63 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
           </div>
         </div>
       )}
+      {showThankYou && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50" onClick={() => setShowThankYou(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full h-[250px] text-center flex flex-col items-center justify-center space-y-4 mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="text-6xl">🙏</div>
+            <div className="text-orange-500 font-bold text-4xl">Thank You !</div>
+          </div>
+        </div>
+      )}
+
       {isContactOpen && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-6 text-white">
-          {/* Close button */}
-          <button
-            onClick={() => setIsContactOpen(false)}
-            className="absolute top-4 right-4 text-white bg-black/50 p-2 rounded-full hover:bg-yellow-500/80 transition"
-          >
-            <FaTimes className="text-2xl" />
-          </button>
-
-          {/* Modal content */}
-          <h2 className="text-2xl font-bold mb-8">Contact Us</h2>
-          <p className="text-center mb-6 max-w-md">
-            You can reach us via Facebook Messenger, Email, or Phone. We are happy to assist you!
-          </p>
-
-          {/* Example buttons */}
-          <div className="flex flex-col gap-4 w-full max-w-sm">
-            <a
-              href="https://m.me/yourpage"
-              target="_blank"
-              className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition"
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-pink-500/30 via-rose-300/20 to-yellow-300/30 backdrop-blur-md">
+          {/* Glassy modal container */}
+          <div className="relative w-[90%] max-w-md bg-white/10 backdrop-blur-2xl border border-white/30 shadow-2xl rounded-3xl p-8 text-center text-white">
+            {/* Close button */}
+            <button
+              onClick={() => setIsContactOpen(false)}
+              className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 text-white p-2 rounded-full transition"
             >
-              <FaFacebookMessenger className="text-xl" />
-              Messenger
-            </a>
+              <FaTimes className="text-xl" />
+            </button>
 
-            <a
-              href="mailto:support@example.com"
-              className="flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-800 text-white px-6 py-3 rounded-lg font-semibold transition"
-            >
-              <FaEnvelope className="text-xl" />
-              Email
-            </a>
 
-            <a
-              href="tel:+1234567890"
-              className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition"
-            >
-              <FaPhone className="text-xl" />
-              Call
-            </a>
+            {/* Title */}
+            <h2 className="text-2xl font-bold mb-3 tracking-wide drop-shadow-sm">
+              Contact Us
+            </h2>
+            <p className="text-white/80 mb-8 text-sm leading-relaxed">
+              Reach us via Messenger, Email, or Phone — we’re happy to assist you!
+            </p>
+
+            {/* Buttons */}
+            <div className="flex flex-col gap-4 w-full">
+              <a
+                href="https://m.me/yourpage"
+                target="_blank"
+                className="flex items-center justify-center gap-2 bg-white/20 hover:bg-white/40 text-white px-6 py-3 rounded-full font-semibold transition backdrop-blur-md"
+              >
+                <FaFacebookMessenger className="text-xl" />
+                Messenger
+              </a>
+
+              <a
+                href="mailto:support@example.com"
+                className="flex items-center justify-center gap-2 bg-white/20 hover:bg-white/40 text-white px-6 py-3 rounded-full font-semibold transition backdrop-blur-md"
+              >
+                <FaEnvelope className="text-xl" />
+                Email
+              </a>
+
+              <a
+                href="tel:+1234567890"
+                className="flex items-center justify-center gap-2 bg-white/20 hover:bg-white/40 text-white px-6 py-3 rounded-full font-semibold transition backdrop-blur-md"
+              >
+                <FaPhone className="text-xl" />
+                Call
+              </a>
+            </div>
           </div>
         </div>
       )}
@@ -291,4 +365,4 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
   );
 }
 
-//Correct with 246 line code changes
+//Correct with 368 line code changes

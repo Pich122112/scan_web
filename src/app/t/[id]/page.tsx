@@ -68,7 +68,7 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
 
             // ✅ Use strong validator instead of regex-only
             if (!CodeValidator.isValidCode(cleanCode)) {
-                setErrorMsg('❌ This is not our code format.');
+                setErrorMsg('❌ Incorrect Qr Code.');
                 setPrize(null);
                 setAlreadyRedeemed(false);
                 setLoading(false);
@@ -90,25 +90,30 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
                 const checkData = await checkRes.json();
                 // --- Add this block ---
                 const isThankYou =
-                    (typeof checkData.message === 'string' && checkData.message.trim().toLowerCase() === 'thank you!'.toLowerCase()) ||
-                    (checkData.data && typeof checkData.data === 'object' && typeof checkData.data.type === 'string' && checkData.data.type.trim().toLowerCase() === 'thank you!'.toLowerCase());
+                    (typeof checkData.message === 'string' &&
+                        checkData.message.trim().toLowerCase().includes('thank you')) ||
+                    (checkData.data &&
+                        typeof checkData.data === 'object' &&
+                        checkData.data.type &&
+                        typeof checkData.data.type === 'string' &&
+                        checkData.data.type.trim().toLowerCase().includes('thank you'));
 
                 if (isThankYou) {
-                    setPrize({
-                        issuer: '',
-                        amount: 0,
-                        wallet_id: 0,
-                        wallet_name: '',
-                        new_amount: 0,
-                        label: 'Thank You',
-                        status: ''
-                    });
-                    setErrorMsg(null);
+                    setPrize(null);
+                    setErrorMsg('🙏 Thank You !');
                     setAlreadyRedeemed(false);
                     setLoading(false);
                     setShowResultDialog(true);
+
+                    // Auto-close after 5 seconds like used-code case
+                    setTimeout(() => {
+                        setShowResultDialog(false);
+                        setPrize(null);
+                        router.replace('/');
+                    }, 5000);
                     return;
                 }
+
                 // Error/invalid/redeemed code: Show dialog, do NOT auto-redirect
                 if (
                     !checkData.success ||
@@ -118,7 +123,8 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
                         checkData.message.toLowerCase().includes('already redeemed') ||
                         checkData.message.toLowerCase().includes('already used') ||
                         checkData.message.toLowerCase().includes('expired code') ||
-                        checkData.message.toLowerCase().includes('could not be found')
+                        checkData.message.toLowerCase().includes('could not be found') ||
+                        checkData.message.toLowerCase().includes('invalid')
                     ))
                 ) {
                     setPrize(null);
@@ -133,8 +139,6 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
                         setPrize(null);
                         router.replace('/');
                     }, 5000);
-
-
                     return;
                 }
 
@@ -151,18 +155,31 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
                 };
 
                 if (!prizeObj.label) {
-                    if (prizeObj.wallet_name === "GB") {
-                        prizeObj.label = `${prizeObj.amount} Score`;
-                    } else if (prizeObj.wallet_name === "D") {
-                        prizeObj.label = `${prizeObj.amount} D`;
-                    } else if (prizeObj.wallet_name) {
-                        prizeObj.label = `${prizeObj.amount} ${prizeObj.wallet_name}`;
-                    } else if (prizeObj.amount) {
-                        prizeObj.label = `${prizeObj.amount}`;
-                    } else {
-                        prizeObj.label = 'Prize';
+                    const wallet = d.wallet_name || d.wallet || '';
+                    switch (wallet) {
+                        case 'GB':
+                            prizeObj.label = `${prizeObj.amount} Score (${wallet})`;
+                            break;
+                        case 'D':
+                            prizeObj.label = `${prizeObj.amount} D (${wallet})`;
+                            break;
+                        case 'ID':
+                            prizeObj.label = `${prizeObj.amount} Score (${wallet})`;
+                            break;
+                        case 'BS':
+                            prizeObj.label = `${prizeObj.amount} Score (${wallet})`;
+                            break;
+                        case 'DM':
+                            prizeObj.label = `${prizeObj.amount} Diamond (${wallet})`;
+                            break;
+                        default:
+                            prizeObj.label = prizeObj.amount
+                                ? `${prizeObj.amount} ${wallet || ''}`.trim()
+                                : 'Prize';
                     }
                 }
+
+
 
                 // If backend provides status: used (for extra safety)
                 if (prizeObj.status && prizeObj.status.toLowerCase().includes('used')) {
@@ -196,7 +213,6 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [params]);
 
-    // Remove auto route from dialog close (user must click to go homepage)
     const handleDialogClose = async () => {
         // If you want to redeem before closing, you can keep this
         await redeemPrize();
@@ -216,27 +232,33 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
             const checkRes = await fetch(`https://api.sandbox.gzb.app/api/v2/redeem-check?code=${encodeURIComponent(code)}`);
             if (!checkRes.ok) throw new Error(`Check API error: ${checkRes.status}`);
             const checkData = await checkRes.json();
-            // --- Add this block ---
+
             const isThankYou =
-                (typeof checkData.message === 'string' && checkData.message.trim().toLowerCase() === 'thank you!'.toLowerCase()) ||
-                (checkData.data && typeof checkData.data === 'object' && typeof checkData.data.type === 'string' && checkData.data.type.trim().toLowerCase() === 'thank you!'.toLowerCase());
+                (typeof checkData.message === 'string' &&
+                    checkData.message.trim().toLowerCase().includes('thank you')) ||
+                (checkData.data &&
+                    typeof checkData.data === 'object' &&
+                    checkData.data.type &&
+                    typeof checkData.data.type === 'string' &&
+                    checkData.data.type.trim().toLowerCase().includes('thank you'));
 
             if (isThankYou) {
-                setPrize({
-                    issuer: '',
-                    amount: 0,
-                    wallet_id: 0,
-                    wallet_name: '',
-                    new_amount: 0,
-                    label: 'Thank You',
-                    status: ''
-                });
-                setErrorMsg(null);
+                setPrize(null);
+                setErrorMsg('🙏 Thank You !');
                 setAlreadyRedeemed(false);
                 setLoading(false);
                 setShowResultDialog(true);
+
+                // Auto-close after 5 seconds like used-code case
+                setTimeout(() => {
+                    setShowResultDialog(false);
+                    setPrize(null);
+                    router.replace('/');
+                }, 5000);
                 return;
             }
+
+
             if (!checkData.success || !checkData.data) {
                 setPrize(null);
                 setErrorMsg(checkData.message || '❌ Invalid or already redeemed code.');
@@ -273,12 +295,31 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
             } else if (data.success && data.data && typeof data.data === 'object') {
                 const prizeData = data.data;
                 if (!prizeData.label) {
-                    prizeData.label = prizeData.wallet_name === "GB"
-                        ? `${prizeData.amount} Score`
-                        : prizeData.wallet_name === "D"
-                            ? `${prizeData.amount} D`
-                            : `${prizeData.amount} ${prizeData.wallet_name}`;
+                    const wallet = prizeData.wallet_name || prizeData.wallet || '';
+                    switch (wallet) {
+                        case 'GB':
+                            prizeData.label = `${prizeData.amount} Score (${wallet})`;
+                            break;
+                        case 'D':
+                            prizeData.label = `${prizeData.amount} D (${wallet})`;
+                            break;
+                        case 'ID':
+                            prizeData.label = `${prizeData.amount} Score (${wallet})`;
+                            break;
+                        case 'BS':
+                            prizeData.label = `${prizeData.amount} Score (${wallet})`;
+                            break;
+                        case 'DM':
+                            prizeData.label = `${prizeData.amount} Diamond (${wallet})`;
+                            break;
+                        default:
+                            prizeData.label = prizeData.amount
+                                ? `${prizeData.amount} ${wallet || ''}`.trim()
+                                : 'Prize';
+                    }
                 }
+
+
                 setPrize(prizeData);
                 setErrorMsg(null);
                 setAlreadyRedeemed(false);
@@ -326,4 +367,4 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
 
 }
 
-//Correct with 287 line code changes
+//Correct with 338 line code changes

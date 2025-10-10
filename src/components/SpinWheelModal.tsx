@@ -5,6 +5,7 @@ import { Dialog } from '@headlessui/react';
 import confetti from 'canvas-confetti';
 import Image from 'next/image';
 import logo from '@/assets/logo.png';
+import { FaTimes } from 'react-icons/fa';
 interface PrizeType {
     label: string;
     issuer: string;
@@ -302,25 +303,31 @@ export default function SpinWheelModal({ onClose, prize }: SpinWheelModalProps) 
             className={`fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
         >
             <Dialog.Panel className="relative w-full h-full flex flex-col items-center justify-center bg-[#ff6600]">
+                {/* Close button at top-left */}
+                <button
+                    onClick={() => onClose(resultPrize ? resultPrize.label : '')}
+                    className="absolute top-4 left-4 z-50 p-2 rounded-full bg-black/50 hover:bg-yellow-500/80 text-white transition"
+                >
+                    <FaTimes className="text-white text-xl" />
+                </button>
+
                 {/* Logo at the top */}
-              <div className="absolute top-6 left-1/2 -translate-x-1/2">
-  <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden animate-zoom">
-    <Image
-      src={logo}
-      alt="Logo"
-      width={96}
-      height={96}
-      className="object-contain"
-    />
-  </div>
-</div>
-                <h2 className="text-white text-xl font-bold my-3 font-[Poppins]">សូមស្វាគមន៍មកកាន់គេហទំព័រការស្កេន</h2>
-                <p className="text-white text-lg mb-4 font-bold font-[Poppins]">ផ្សងសំណាងរបស់យើង</p>
+                <div className="absolute top-6 left-1/2 -translate-x-1/2">
+                    <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden animate-zoom">
+                        <Image
+                            src={logo}
+                            alt="Logo"
+                            width={60}
+                            height={60}
+                            className="object-contain"
+                        />
+                    </div>
+                </div>
                 <div className="relative w-[300px] h-[300px] mt-4">
                     <canvas
                         ref={canvasRef}
-                        width={300}
-                        height={300}
+                        width={280}
+                        height={280}
                         className="transition-transform duration-300 p-1 ease-out rounded-full bg-[#000000]"
                         style={{
                             transform: 'rotate(0deg)',
@@ -339,12 +346,12 @@ export default function SpinWheelModal({ onClose, prize }: SpinWheelModalProps) 
                 </div>
                 {spinning && (
                     <p className="mt-4 text-lg font-semibold animate-pulse text-white">
-                        កំពុងបង្វិលសូមរង់ចាំ...
+                        Spinning...
                     </p>
                 )}
                 {!spinning && resultPrize && (
                     <div className="mt-6 text-center">
-                        <h3 className="text-2xl font-bold text-yellow-300 mb-2">🎉 អបអរសាទរ!</h3>
+                        <h3 className="text-2xl font-bold text-yellow-300 mb-2">🎉 Congratulation!</h3>
                         <p className="text-xl text-white">You won <b>{resultPrize.label}</b> from <b>{prize.wallet_name}</b>!</p>
                     </div>
                 )}
@@ -353,4 +360,4 @@ export default function SpinWheelModal({ onClose, prize }: SpinWheelModalProps) 
     );
 }
 
-//Correct with 358 line code changes
+//Correct with 363 line code changes

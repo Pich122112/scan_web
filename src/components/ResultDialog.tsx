@@ -53,9 +53,10 @@ export default function ResultDialog({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [prizeState, setPrizeState] = useState<string | null>(prize);
 
-  // Confetti on load
+  // Confetti on load (only for real prizes)
   useEffect(() => {
-    if (prize) {
+    // Only trigger confetti when prize is NOT a Thank You or error message
+    if (prize && !prize.toLowerCase().includes('thank you')) {
       const colors = ['#3300ff', '#ffffff', '#fff700'];
       let count = 0;
       const burst = () => {
@@ -67,6 +68,7 @@ export default function ResultDialog({
       return () => clearTimeout(burst as unknown as number);
     }
   }, [prize]);
+
 
   useEffect(() => {
     const fullPhone = selectedCountry.code + phoneNumber;
@@ -197,7 +199,7 @@ export default function ResultDialog({
       className="fixed inset-0 z-50 flex items-center justify-center bg-orange-500 bg-opacity-90 overflow-auto px-2"
     >
       <div className="absolute inset-0 bg-orange-500" />
-      <div className="absolute top-20 mt-5 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+      <div className="absolute top-15 mt-5 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
         <div className="w-20 h-20 rounded-full overflow-hidden shadow-lg bg-white flex items-center justify-center">
           <Image src={logo} alt="GANZBERG Logo" width={80} height={80} className="object-contain" />
         </div>
@@ -205,44 +207,92 @@ export default function ResultDialog({
           GANZBERG GERMAN PREMIUM BEER
         </div>
       </div>
-      <Dialog.Panel className="relative z-10 bg-white rounded-2xl shadow-xl text-center px-3 py-6 w-full max-w-sm md:max-w-md lg:max-w-xl xl:max-w-2xl focus:outline-none overflow-visible">
-        <div className="text-6xl mb-5">🎊</div>
+      <Dialog.Panel className="relative mt-20 z-10 bg-white rounded-2xl shadow-xl text-center px-3 py-6 w-full max-w-sm md:max-w-md lg:max-w-xl xl:max-w-2xl focus:outline-none overflow-visible">
         {errorMsg ? (
-          <div className="text-red-500 font-bold text-xl">{errorMsg}</div>
+          <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full h-[200px] text-center flex flex-col items-center justify-center space-y-4 space-x-4 mx-2">
+              {errorMsg && (
+                <>
+                  {/* Split emoji and text dynamically */}
+                  <div className="text-4xl">
+                    {errorMsg.split(" ")[0]} {/* 🙏 */}
+                  </div>
+                  <div className="text-black font-bold text-2xl">
+                    {errorMsg.split(" ").slice(1).join(" ")} {/* Thank You ! */}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
         ) : isVerified ? (
           <>
-            <div className="text-black text-xl">Congratulation you have receive</div>
-            <div className="text-orange-500 font-extrabold text-4xl md:text-3xl lg:text-4xl mt-4">
-              {prize || 'No prize available'}
-            </div>
-            <div className="text-gray-900 font-bold text-lg mt-5">FROM GANZBERG</div>
-            <div className="mt-6 text-green-600 font-semibold">
-              ✅ Your account already verify.
-            </div>
-            <div className="mt-6">
-              <button onClick={onClose}
-                className="w-full bg-blue-500 text-white-900 font-bold 
-              text-lg rounded-full flex items-center justify-center py-3 
-              hover:bg-blue-600 transition" > Click to continue
-                <MdArrowForward className="w-5 h-5 ms-2" />
-              </button>
-            </div>
+            <>
+              <div className="text-black text-xl">Congratulation you have receive</div>
+
+              {prize ? (
+                <div className="text-center mt-4 text-orange-500 font-extrabold leading-tight">
+                  <div className="text-6xl">
+                    {prize.split(' ')[0]} {/* e.g. 10 */}
+                  </div>
+                  <div className="text-2xl text-gray-900 font-bold mt-1">
+                    {(() => {
+                      const parts = prize.split(' ');
+                      const rest = parts.slice(1).join(' ');
+                      const match = rest.match(/(Score|Diamond|D|ID|BS)\s*\((\w+)\)/);
+                      if (match) {
+                        const [, type, wallet] = match;
+                        return `${type} from ${wallet}`;
+                      } else {
+                        return rest;
+                      }
+                    })()}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-orange-500 font-extrabold text-4xl md:text-3xl lg:text-4xl mt-4">
+                  No prize available
+                </div>
+              )}
+
+              <div className="mt-6 text-green-600 font-semibold">
+                ✅ Your account already verify.
+              </div>
+
+              <div className="mt-6">
+                <button
+                  onClick={onClose}
+                  className="w-full bg-orange-500 text-white font-bold 
+                  text-lg rounded-full flex items-center justify-center py-3 
+                   hover:bg-blue-600 transition"
+                >
+                  Click to continue
+                  <MdArrowForward className="w-5 h-5 ms-2" />
+                </button>
+              </div>
+            </>
+
           </>
         ) : (
           <>
             {/* 🎁 Show prize first if available */}
-            {/* 🎁 Show prize first if available */}
             {prize && (
               <div className="mb-6 text-center">
-                <div className="text-orange-500 font-extrabold text-4xl mt-2">
-                  {prize}
+                <div className="text-orange-500 font-extrabold mt-2 leading-tight">
+                  {/* Split amount and label */}
+                  <div className="text-6xl">
+                    {prize.split(' ')[0]} {/* 10 */}
+                  </div>
+                  <div className="text-2xl mt-1">
+                    {prize.split(' ').slice(1).join(' ')} {/* Score (GB) */}
+                  </div>
                 </div>
               </div>
             )}
 
             {/* Flexible register text */}
             <div className="text-gray-800 font-medium text-lg mb-2 text-center">
-              {prize ? "Register your account to get score" : "Register your account"}
+              {prize ? "Create or Login your account to get score" : "Create or Login your account"}
             </div>
 
             <div className="mt-8">
@@ -338,4 +388,4 @@ export default function ResultDialog({
   );
 }
 
-//Correct with 341 line code changes
+//Correct with 356 line code change 

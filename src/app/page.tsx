@@ -6,7 +6,7 @@ import DiamondBanner from '@/components/DiamondBanner';
 import DownloadAppCard from '@/components/download';
 import { usePhone } from '@/context/PhoneContext';
 import BottomAppbar from '@/components/BottomNav';
-import fantaLogo from '@/assets/logo.png';
+import fantaLogo from '@/assets/logowhite.png';
 import up7Logo from '@/assets/newbslogo.png';
 import spriteLogo from '@/assets/idol.png';
 import SpinWheelModal from '@/components/SpinWheelModal';
