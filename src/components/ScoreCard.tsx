@@ -10,7 +10,7 @@ type ScoreItem = {
 
 export default function ScoreCardGroup({ scores }: { scores: ScoreItem[] }) {
     return (
-        <div className="relative rounded-xl mt-8 py-6 px-4 flex justify-around items-start
+        <div className="relative rounded-xl mt-8 py-8 px-4 flex justify-around items-start
                     shadow-lg overflow-visible backdrop-blur-xl
                     bg-white/10 border border-white/20">
             {/* Soft glow overlay */}
@@ -22,7 +22,7 @@ export default function ScoreCardGroup({ scores }: { scores: ScoreItem[] }) {
                     className="flex-1 flex flex-col items-center text-center relative"
                 >
                     {/* Floating glassy circle (now truly above the card) */}
-                    <div className="absolute -top-10 w-14 h-14 rounded-full 
+                    <div className="absolute -top-12 w-14 h-14 rounded-full 
                           bg-white/20 backdrop-blur-lg border border-white/30
                           flex items-center justify-center shadow-[0_6px_16px_rgba(255,255,255,0.15)] z-10">
                         <Image
@@ -40,13 +40,13 @@ export default function ScoreCardGroup({ scores }: { scores: ScoreItem[] }) {
                     </p>
 
                     {/* Title */}
-                    <p className="text-white/90 text-base font-semibold mt-1">
+                    <p className="text-white/90 text-base font-semibold mt-4">
                         {item.title}
                     </p>
 
                     {/* Divider */}
                     {index < scores.length - 1 && (
-                        <div className="absolute right-0 top-6 h-10 w-[1px] bg-white/25" />
+                        <div className="absolute right-0 top-8 h-10 w-[1px] bg-white/25" />
                     )}
                 </div>
             ))}
