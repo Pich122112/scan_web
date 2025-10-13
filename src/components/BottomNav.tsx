@@ -50,6 +50,11 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
   }
 
   // Toggle torch function
+  // Declare a helper type that safely allows 'torch'
+  type TorchMediaTrackConstraints = MediaTrackConstraints & {
+    advanced?: { torch?: boolean }[];
+  };
+
   const toggleTorch = async (enable: boolean) => {
     try {
       const video = videoRef.current ?? findScannerVideoElement();
@@ -59,7 +64,6 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
         return;
       }
 
-      // For browsers, stream is in video.srcObject
       const stream = video.srcObject as MediaStream | null;
       if (!stream) {
         setErrorMsg('Camera stream not available yet.');
@@ -74,24 +78,26 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
         return;
       }
 
-      // Check capabilities (some browsers don't implement getCapabilities)
-      const capabilities = (track as any).getCapabilities?.();
-      if (!capabilities || !capabilities.torch) {
-        // Not supported (commonly on iOS Safari/WKWebView)
-        // Optional: detect iOS and show a better message
+      const capabilities = (track.getCapabilities?.() ?? {}) as MediaTrackCapabilities;
+
+      // Check if the torch is supported
+      if (!('torch' in capabilities)) {
         const isIOS = /iP(ad|hone|od)/i.test(navigator.userAgent);
-        setErrorMsg(isIOS
-          ? 'Torch not supported on this iOS device/browser.'
-          : 'Torch not supported on this device/browser.'
+        setErrorMsg(
+          isIOS
+            ? 'Torch not supported on this iOS device/browser.'
+            : 'Torch not supported on this device/browser.'
         );
         setTimeout(() => setErrorMsg(null), 3000);
         return;
       }
 
-      // Apply constraints to toggle torch
-      await (track as MediaStreamTrack).applyConstraints({ advanced: [{ torch: enable }] });
+      // ✅ Safely apply torch constraint
+      const constraints: TorchMediaTrackConstraints = {
+        advanced: [{ torch: enable }],
+      };
+      await track.applyConstraints(constraints);
 
-      // Update state
       setTorchOn(enable);
     } catch (err) {
       console.error('toggleTorch error:', err);
@@ -303,8 +309,8 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
             <button
               onClick={() => toggleTorch(!torchOn)}
               className={`flex flex-col items-center justify-center p-4 rounded-full transition-all duration-200 shadow-lg ${torchOn
-                  ? 'bg-yellow-400 text-white shadow-yellow-500/50'
-                  : 'bg-black/60 text-white hover:bg-yellow-500 hover:text-black'
+                ? 'bg-yellow-400 text-white shadow-yellow-500/50'
+                : 'bg-black/60 text-white hover:bg-yellow-500 hover:text-black'
                 }`}
             >
               <span className="text-3xl">🔦</span>

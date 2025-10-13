@@ -6,7 +6,6 @@ import { FaBell, FaQrcode } from 'react-icons/fa';
 import { usePhone } from '@/context/PhoneContext';
 import { useState } from 'react';
 import { formatPhoneNumber } from "@/utils/format_phone";
-import { color } from 'framer-motion';
 
 export default function Navbar() {
     const { tempPhoneNumber, userData } = usePhone();
