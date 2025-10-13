@@ -6,6 +6,7 @@ import { FaBell, FaQrcode } from 'react-icons/fa';
 import { usePhone } from '@/context/PhoneContext';
 import { useState } from 'react';
 import { formatPhoneNumber } from "@/utils/format_phone";
+import { color } from 'framer-motion';
 
 export default function Navbar() {
     const { tempPhoneNumber, userData } = usePhone();
@@ -32,16 +33,16 @@ export default function Navbar() {
     return (
         <>
             {/* 🧊 Navbar */}
-            <nav className="fixed top-0 left-0 right-0 z-50 bg-white/10 backdrop-blur-xl border-b border-white/20 shadow-[0_4px_20px_rgba(255,255,255,0.1)]">
+            <nav className="fixed top-0 left-0 right-0 z-50" style={{ background: "var(--background)" }}>
                 <div className="max-w-[1200px] mx-auto py-3 px-4 flex items-center justify-between flex-wrap gap-3">
                     {/* Left Section: Logo + Greeting */}
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center p-1 border border-white/30 shadow-inner backdrop-blur-md">
+                    <div className="flex items-center">
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center p-1">
                             <Image
                                 src={logo}
                                 alt="Logo"
-                                width={40}
-                                height={40}
+                                width={60}
+                                height={60}
                                 className="object-contain rounded-full"
                             />
                         </div>
@@ -61,7 +62,7 @@ export default function Navbar() {
                         <button
                             onClick={handleDialog}
                             className="p-2 bg-white/15 hover:bg-white/25 backdrop-blur-md rounded-full 
-                                       transition duration-200 relative shadow-md"
+                                       transition duration-200 relative"
                         >
                             <FaBell className="text-lg text-white" />
                             <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white" />
@@ -71,7 +72,7 @@ export default function Navbar() {
                         <button
                             onClick={handleDialog}
                             className="p-2 bg-white/15 hover:bg-white/25 backdrop-blur-md rounded-full 
-                                       transition duration-200 shadow-md"
+                                       transition duration-200"
                         >
                             <FaQrcode className="text-lg text-white" />
                         </button>

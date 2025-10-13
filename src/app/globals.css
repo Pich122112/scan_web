@@ -2,7 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
 
 :root {
-  --background: #000000;
+  --background: #fb6000;
   /* pure black */
   --foreground: #ffffff;
   --font-sans: 'Poppins', sans-serif;
@@ -30,8 +30,7 @@ body {
   width: 100%;
   margin: 0;
   padding: 0;
-
-  background-color: #000000 !important;
+  background-color: #fb6000 !important;
   /* Pure black background */
   color: #ffffff;
   font-family: 'Poppins', sans-serif;
@@ -49,38 +48,21 @@ body {
 #root,
 #__next {
   min-height: 100%;
-  background-color: #000000 !important;
+  background-color: #fb6000 !important;
   /* Solid black */
-}
-
-/* Glassy container helper */
-.glassy-box {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 18px;
-  box-shadow: 0 6px 24px rgba(255, 255, 255, 0.05);
-  transition: all 0.3s ease;
-}
-
-/* Optional hover effect */
-.glassy-box:hover {
-  background: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 8px 32px rgba(255, 255, 255, 0.08);
 }
 
 /* Dark mode still stays black */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #000000;
+    --background: #fb6000;
     --foreground: #ededed;
   }
 
   body,
   #root,
   #__next {
-    background-color: #000000 !important;
+    background-color: #fb6000 !important;
   }
 }
 
@@ -115,4 +97,45 @@ body {
 
 .animate-zoom-in-out {
   animation: zoom-in-out 1.2s ease-in-out infinite;
+}
+
+@keyframes border-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-border {
+  border-radius: 50%;
+  padding: 4px; /* thickness of the border */
+  background: conic-gradient(
+    from 0deg,
+    #06fbc9,
+    #f72585,
+    #06fbc9
+  );
+  animation: border-rotate 6s linear infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.counter-rotate {
+  animation: border-rotate 6s linear infinite reverse;
+  border-radius: 50%;
+}
+
+@keyframes dots {
+  0%, 20% { content: ''; }
+  40% { content: '.'; }
+  60% { content: '..'; }
+  80%, 100% { content: '...'; }
+}
+
+.loading-dots::after {
+  content: '';
+  animation: dots 1.5s steps(4, end) infinite;
 }

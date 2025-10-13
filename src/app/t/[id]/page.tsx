@@ -342,15 +342,13 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
     return (
         <div className="flex justify-center items-center min-h-screen">
             {/* Always show a fallback UI */}
-            <p className="text-gray-600">Loading...</p>
-
             {/* Overlay spinner */}
             {loading && (
                 <div className="absolute flex flex-col items-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mb-4"></div>
-                    <p>🔄 Checking your code</p>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
                 </div>
             )}
+            <p className="text-white loading-dots font-semibold text-lg mt-18">Loading</p>
 
             {showResultDialog && (
                 <ResultDialog

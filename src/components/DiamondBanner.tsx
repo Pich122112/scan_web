@@ -6,9 +6,21 @@ interface DiamondBannerProps {
 
 export default function DiamondBanner({ diamondCount }: DiamondBannerProps) {
     return (
-        <div className="relative mt-8 sm:mx-0 rounded-2xl h-40 sm:h-60 flex items-center justify-center overflow-hidden group">
-            {/* Glassy background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-white/10 to-white/5 backdrop-blur-2xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.15)] rounded-2xl" />
+        <div
+            className="relative mt-14 sm:mx-0 rounded-xl h-30 sm:h-30 flex items-center justify-center overflow-visible group"
+            style={{
+                background: "rgba(251,96,0,0.8)",
+                boxShadow: "0 0 10px rgba(255,255,255,0.4), 0 0 10px rgba(255,255,255,0.4)",
+            }}
+        >
+            {/* Glassy background with white shadow */}
+            <div
+                className="absolute inset-0 rounded-2xl"
+                style={{
+                    background: "rgba(251,96,0,0.8)",
+                    boxShadow: "0 0 10px rgba(255,255,255,0.4), 0 0 10px rgba(255,255,255,0.4)",
+                }}
+            />
 
             {/* Soft glowing orbs for depth */}
             <div className="absolute -top-10 -left-10 w-32 h-32 bg-gradient-to-br from-cyan-400/30 to-blue-500/20 rounded-full blur-3xl"></div>

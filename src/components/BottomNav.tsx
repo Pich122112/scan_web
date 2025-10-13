@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { RiQrScanFill } from 'react-icons/ri';
+import { useState, useRef } from 'react';
 import { FaHome, FaFacebookMessenger, FaEnvelope, FaPhone, FaTimes } from 'react-icons/fa';
 import { Scanner } from '@yudiel/react-qr-scanner';
 import { CodeValidator } from '@/utils/codeValidator';
 import SpinWheelModal from './SpinWheelModal';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { div } from 'framer-motion/m';
+import { MdSupportAgent, MdCenterFocusStrong } from 'react-icons/md'; // <-- Material support agent icon
 
 interface IDetectedBarcode {
   rawValue: string;
@@ -35,6 +35,71 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
   const [torchOn, setTorchOn] = useState(false);
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null); // optional if you can get scanner ref
+
+  function findScannerVideoElement(): HTMLVideoElement | null {
+    // If you have a ref from the Scanner component, use it instead.
+    // Fallback: search the DOM for a visible video element inside the scanning modal
+    const modal = document.querySelector('.fixed.inset-0.z-50.bg-black'); // your scanner modal root
+    if (modal) {
+      const vid = modal.querySelector<HTMLVideoElement>('video');
+      if (vid) return vid;
+    }
+    // final fallback: first video on page (dangerous if others exist)
+    return document.querySelector<HTMLVideoElement>('video');
+  }
+
+  // Toggle torch function
+  const toggleTorch = async (enable: boolean) => {
+    try {
+      const video = videoRef.current ?? findScannerVideoElement();
+      if (!video) {
+        setErrorMsg('Camera not found. Start scanner first.');
+        setTimeout(() => setErrorMsg(null), 2500);
+        return;
+      }
+
+      // For browsers, stream is in video.srcObject
+      const stream = video.srcObject as MediaStream | null;
+      if (!stream) {
+        setErrorMsg('Camera stream not available yet.');
+        setTimeout(() => setErrorMsg(null), 2500);
+        return;
+      }
+
+      const [track] = stream.getVideoTracks();
+      if (!track) {
+        setErrorMsg('No video track available.');
+        setTimeout(() => setErrorMsg(null), 2500);
+        return;
+      }
+
+      // Check capabilities (some browsers don't implement getCapabilities)
+      const capabilities = (track as any).getCapabilities?.();
+      if (!capabilities || !capabilities.torch) {
+        // Not supported (commonly on iOS Safari/WKWebView)
+        // Optional: detect iOS and show a better message
+        const isIOS = /iP(ad|hone|od)/i.test(navigator.userAgent);
+        setErrorMsg(isIOS
+          ? 'Torch not supported on this iOS device/browser.'
+          : 'Torch not supported on this device/browser.'
+        );
+        setTimeout(() => setErrorMsg(null), 3000);
+        return;
+      }
+
+      // Apply constraints to toggle torch
+      await (track as MediaStreamTrack).applyConstraints({ advanced: [{ torch: enable }] });
+
+      // Update state
+      setTorchOn(enable);
+    } catch (err) {
+      console.error('toggleTorch error:', err);
+      setErrorMsg('Unable to toggle torch.');
+      setTimeout(() => setErrorMsg(null), 3000);
+    }
+  };
+
 
 
   // Use the FULL code as the "used" key!
@@ -159,7 +224,7 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
   const handleWheelClose = () => {
     setShowWheel(false);
     setScanResult(null);
-    if (onPrizeWin) onPrizeWin(); 
+    if (onPrizeWin) onPrizeWin();
   };
 
   return (
@@ -169,46 +234,41 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
         <div className="max-w-[1200px] mx-auto">
           <div
             className="relative flex items-center justify-between 
-                 rounded-full px-4 sm:px-6 py-6 w-full
-                 bg-white/10 backdrop-blur-2xl border border-white/20 
-                 shadow-[0_8px_32px_rgba(255,255,255,0.15)]
-                 hover:shadow-[0_8px_48px_rgba(255,255,255,0.25)]
-                 transition-all duration-300"
+                 rounded-full px-6 sm:px-6 py-6 w-full" style={{
+              background: "rgba(251,96,0,0.8)",
+              boxShadow: "0 0 10px rgba(255, 255, 255, 0.826), 0 0 10px rgba(255, 255, 255, 0.826)",
+            }}
           >
             {/* Left - Home */}
-            <button className="flex items-center gap-2 bg-white/10 hover:bg-white/30 
-                         text-white border border-white/20 px-4 sm:px-6 py-2 
-                         rounded-full text-sm font-semibold shadow-md 
-                         backdrop-blur-md transition">
+            <button className="flex items-center gap-3 
+                         text-white px-5 sm:px-6 py-2 
+                         rounded-full text-sm font-semibold border border-1 border-white bg-black">
               <FaHome className="text-base" />
               Home
             </button>
 
             {/* Right - Contact */}
             <button
-              className="flex items-center gap-2 text-white bg-white/10 hover:bg-white/30 
-                   border border-white/20 px-3 sm:px-6 py-2 rounded-full 
-                   text-sm font-semibold shadow-md backdrop-blur-md transition"
+              className="flex items-center gap-2 text-white
+                   border border-white px-3 sm:px-6 py-2 rounded-full 
+                   text-sm font-semibold"
               onClick={() => setIsContactOpen(true)}
             >
-              <FaFacebookMessenger className="text-base" />
+              <MdSupportAgent className="text-base" />
               Contact
             </button>
 
             {/* Center Floating Glassy QR Button */}
-            <div
-              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 
-                   rounded-full bg-gradient-to-br from-orange-400/60 via-pink-500/40 to-purple-500/50
-                   p-[3px] shadow-[0_8px_24px_rgba(255,255,255,0.2)] backdrop-blur-xl"
-            >
-              <button
-                onClick={() => setIsScanning(true)}
-                className="bg-white/20 hover:bg-white/40 rounded-full border border-white/30
-                     p-5 shadow-[0_8px_20px_rgba(251,96,0,0.3)] transition-transform
-                     duration-300 hover:scale-105 backdrop-blur-2xl"
-              >
-                <RiQrScanFill className="text-white text-5xl drop-shadow-[0_4px_8px_rgba(255,255,255,0.3)]" />
-              </button>
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-border">
+              {/* Inner wrapper to counter-rotate and keep icon stable */}
+              <div className="flex items-center justify-center counter-rotate">
+                <button
+                  onClick={() => setIsScanning(true)}
+                  className="bg-orange-500 rounded-full p-4 transition-transform duration-300 hover:scale-105 backdrop-blur-2xl"
+                >
+                  <MdCenterFocusStrong className="text-white text-5xl" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -238,22 +298,22 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
           </button>
 
           {/* 🔦 Flash toggle button */}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center">
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center space-y-3">
+            {/* Flash toggle button */}
             <button
-              onClick={() => setTorchOn((prev) => !prev)}
-              className={`flex flex-col items-center justify-center p-4 rounded-full transition-all duration-200 shadow-lg  ${torchOn
-                ? 'bg-yellow-400 text-white shadow-yellow-500/50'
-                : 'bg-black/60 text-white hover:bg-yellow-500 hover:text-black'
+              onClick={() => toggleTorch(!torchOn)}
+              className={`flex flex-col items-center justify-center p-4 rounded-full transition-all duration-200 shadow-lg ${torchOn
+                  ? 'bg-yellow-400 text-white shadow-yellow-500/50'
+                  : 'bg-black/60 text-white hover:bg-yellow-500 hover:text-black'
                 }`}
             >
-              {/* Flash icon */}
               <span className="text-3xl">🔦</span>
-              {/* Label */}
               <span className="text-xs mt-1 font-semibold">
                 {torchOn ? 'Flash ON' : 'Flash OFF'}
               </span>
             </button>
           </div>
+
 
           {/* Full-screen scanner */}
           <div className="absolute inset-0">
@@ -365,4 +425,4 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
   );
 }
 
-//Correct with 368 line code changes
+//Correct with 363 line code changes
