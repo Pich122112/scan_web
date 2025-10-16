@@ -46,7 +46,7 @@ function VerifiedPrizeDialog({ prize, onClose }: VerifiedPrizeDialogProps) {
 
   return (
     <>
-      <div className="text-black text-xl">You have receive</div>
+      <div className="text-black text-xl">Congratulation you have receive</div>
 
       {prize ? (
         <div className="text-center mt-4 text-orange-500 font-extrabold leading-tight">

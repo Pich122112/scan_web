@@ -113,7 +113,7 @@ export default function ExchangePrizeListPage() {
 
                             <p className="font-bold text-xl drop-shadow-sm">Available on App</p>
                             <p className="text-white/80 text-sm max-w-[250px]">
-                                Get the app to convert your points into exciting rewards! More other exchange product has on app
+                                Get the app to convert your points into exciting rewards! More other exchange prizes has on app
                             </p>
                             <div className="mt-4 flex justify-center gap-4">
                                 <button
