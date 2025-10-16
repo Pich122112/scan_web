@@ -4,6 +4,12 @@ const nextConfig: NextConfig = {
   // Enable strict mode
   reactStrictMode: true,
 
+    // Configure allowed external image domains
+  images: {
+    domains: ['redeem.piikmall.com'], // ✅ add your API image host here
+  },
+
+  
   // Optional: custom headers for fonts
   async headers() {
     return [

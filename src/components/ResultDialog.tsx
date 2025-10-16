@@ -8,7 +8,7 @@ import { ArrowRightIcon } from '@heroicons/react/24/solid';
 import { usePhone } from '@/context/PhoneContext';
 import { requestOtp, verifyOtp, fetchUserProfile, PHONE_STORAGE_KEY, TOKEN_STORAGE_KEY, USER_DATA_STORAGE_KEY } from '@/services/auth_api';
 import { DeviceUUID } from '@/utils/deviceUUID';
-import { MdArrowForward, MdKeyboardArrowDown, MdKeyboardArrowUp } from "react-icons/md";
+import { MdKeyboardArrowDown, MdKeyboardArrowUp } from "react-icons/md";
 
 const countryCodes = [
   { code: '855', name: 'Cambodia', flag: '🇰🇭' },
@@ -29,6 +29,66 @@ interface ResultDialogProps {
   onVerificationSuccess: () => void;
   isVerified: boolean;
   code: string;
+}
+interface VerifiedPrizeDialogProps {
+  prize: string | null;
+  onClose: () => void;
+}
+
+// --- VerifiedPrizeDialog for auto-click ---
+function VerifiedPrizeDialog({ prize, onClose }: VerifiedPrizeDialogProps) {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onClose();
+    }, 5000); // Auto-click after 5 seconds
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <>
+      <div className="text-black text-xl">Congratulation you have receive</div>
+
+      {prize ? (
+        <div className="text-center mt-4 text-orange-500 font-extrabold leading-tight">
+          <div className="text-6xl">
+            {prize.split(' ')[0]} {/* e.g. 10 */}
+          </div>
+          <div className="text-2xl text-gray-900 font-bold mt-1">
+            {(() => {
+              const parts = prize.split(' ');
+              const rest = parts.slice(1).join(' ');
+              const match = rest.match(/(Score|Diamond|D|ID|BS)\s*\((\w+)\)/);
+              if (match) {
+                const [, type, wallet] = match;
+                return `${type} from ${wallet}`;
+              } else {
+                return rest;
+              }
+            })()}
+          </div>
+        </div>
+      ) : (
+        <div className="text-orange-500 font-extrabold text-4xl md:text-3xl lg:text-4xl mt-4">
+          No prize available
+        </div>
+      )}
+
+      <div className="mt-6 text-green-600 font-semibold">
+        ✅ Your account already verify.
+      </div>
+
+      <div className="mt-6">
+        <button
+          onClick={onClose}
+          className="w-full bg-orange-500 text-white font-bold 
+            text-lg rounded-full flex items-center justify-center py-3 
+            hover:bg-blue-600 transition"
+        >
+          OK
+        </button>
+      </div>
+    </>
+  );
 }
 
 export default function ResultDialog({
@@ -226,53 +286,7 @@ export default function ResultDialog({
           </div>
 
         ) : isVerified ? (
-          <>
-            <>
-              <div className="text-black text-xl">Congratulation you have receive</div>
-
-              {prize ? (
-                <div className="text-center mt-4 text-orange-500 font-extrabold leading-tight">
-                  <div className="text-6xl">
-                    {prize.split(' ')[0]} {/* e.g. 10 */}
-                  </div>
-                  <div className="text-2xl text-gray-900 font-bold mt-1">
-                    {(() => {
-                      const parts = prize.split(' ');
-                      const rest = parts.slice(1).join(' ');
-                      const match = rest.match(/(Score|Diamond|D|ID|BS)\s*\((\w+)\)/);
-                      if (match) {
-                        const [, type, wallet] = match;
-                        return `${type} from ${wallet}`;
-                      } else {
-                        return rest;
-                      }
-                    })()}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-orange-500 font-extrabold text-4xl md:text-3xl lg:text-4xl mt-4">
-                  No prize available
-                </div>
-              )}
-
-              <div className="mt-6 text-green-600 font-semibold">
-                ✅ Your account already verify.
-              </div>
-
-              <div className="mt-6">
-                <button
-                  onClick={onClose}
-                  className="w-full bg-orange-500 text-white font-bold 
-                  text-lg rounded-full flex items-center justify-center py-3 
-                   hover:bg-blue-600 transition"
-                >
-                  Click to continue
-                  <MdArrowForward className="w-5 h-5 ms-2" />
-                </button>
-              </div>
-            </>
-
-          </>
+          <VerifiedPrizeDialog prize={prize} onClose={onClose} />
         ) : (
           <>
             {/* 🎁 Show prize first if available */}
@@ -388,4 +402,4 @@ export default function ResultDialog({
   );
 }
 
-//Correct with 356 line code change 
+//Correct with 405 line code change

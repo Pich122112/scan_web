@@ -134,6 +134,7 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
 
     // 2️⃣ Extract the NATURAL CODE (11 chars)
     const naturalCode = codePart.substring(0, 11);
+
     console.log('🟡 [DEBUG] Code sent to backend:', codePart); // Now full code
     console.log('🟢 [DEBUG] Full code part:', codePart);
     console.log('🟢 [DEBUG] Natural code:', naturalCode);
@@ -165,6 +166,14 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
       }
 
       const data: ApiResponse = await response.json();
+
+      // ✅ Check for server or backend error messages
+      const lowerMsg = data.message?.toLowerCase() || '';
+      const isServerError =
+        lowerMsg.includes('error') ||
+        lowerMsg.includes('database') ||
+        lowerMsg.includes('server') ||
+        lowerMsg.includes('connection');
 
       if (data.success && data.data && typeof data.data === 'object' && !Array.isArray(data.data)) {
 
@@ -213,14 +222,29 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
         setShowWheel(true);
 
       } else {
-        setErrorMsg(data.message || '❌ Invalid or already redeemed code.');
+        // ✅ Simplify backend error display
+        if (isServerError) {
+          setErrorMsg('⚠️ Server has a problem. Please try again later.');
+        } else {
+          setErrorMsg(data.message || '❌ Invalid or already redeemed code.');
+        }
         setTimeout(() => setErrorMsg(null), 3000);
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
-      setErrorMsg('❌ Network error. Try again.');
+      const error = err instanceof Error ? err : new Error(String(err));
+      if (
+        error.message.includes('NetworkError') ||
+        error.message.includes('Failed to fetch') ||
+        error.message.includes('connection')
+      ) {
+        setErrorMsg('⚠️ Network error. Please check your connection.');
+      } else {
+        setErrorMsg('⚠️ Server has a problem. Please try again later.');
+      }
+
       setTimeout(() => setErrorMsg(null), 3000);
     }
+
   };
 
   const handleError = (error: unknown) => {
@@ -369,9 +393,9 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
       )}
 
       {isContactOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-pink-500/30 via-rose-300/20 to-yellow-300/30 backdrop-blur-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-pink-500/30 via-rose-300/20 to-yellow-300/30 backdrop-blur-md" onClick={() => setIsContactOpen(false)}>
           {/* Glassy modal container */}
-          <div className="relative w-[90%] max-w-md bg-white/10 backdrop-blur-2xl border border-white/30 shadow-2xl rounded-3xl p-8 text-center text-white">
+          <div className="relative w-[90%] max-w-md bg-white/10 backdrop-blur-2xl border border-white/30 shadow-2xl rounded-3xl p-8 text-center text-white" onClick={(e) => e.stopPropagation()}>
             {/* Close button */}
             <button
               onClick={() => setIsContactOpen(false)}

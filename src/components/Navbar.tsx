@@ -26,7 +26,11 @@ export default function Navbar() {
 
     const handleDialog = () => {
         setShowDialog(true);
-        setTimeout(() => setShowDialog(false), 2000);
+        setTimeout(() => setShowDialog(false), 5000);
+    };
+
+    const closeDialog = () => {
+        setShowDialog(false);
     };
 
     return (
@@ -81,9 +85,9 @@ export default function Navbar() {
 
             {/* 📱 Dialog Overlay */}
             {showDialog && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-md animate-fadeIn">
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-md animate-fadeIn" onClick={closeDialog}>
                     <div className="relative bg-white/10 backdrop-blur-2xl border border-white/30 rounded-3xl 
-                                    shadow-2xl px-8 py-6 text-center text-white transform transition-all animate-slideUp">
+                                    shadow-2xl px-8 py-6 text-center text-white transform transition-all animate-slideUp" onClick={(e) => e.stopPropagation()}>
                         {/* Soft inner glow */}
                         <div className="absolute inset-0 -z-10 bg-gradient-to-br from-white/10 via-transparent to-white/5 rounded-3xl" />
 

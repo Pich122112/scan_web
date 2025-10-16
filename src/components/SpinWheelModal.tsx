@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { Dialog } from '@headlessui/react';
 import confetti from 'canvas-confetti';
 import Image from 'next/image';
-import logo from '@/assets/logo.png';
+import logo from '@/assets/gblogo.png';
 import { FaTimes } from 'react-icons/fa';
 interface PrizeType {
     label: string;
@@ -27,61 +27,76 @@ export default function SpinWheelModal({ onClose, prize }: SpinWheelModalProps) 
     const [randomPrizes, setRandomPrizes] = useState<PrizeType[]>([]);
 
     // Function to generate random prizes
+    const walletTypes = ['GB', 'D', 'ID', 'DM', 'BS']; // All supported wallet names
+
     const generateRandomPrizes = (excludePrize?: PrizeType | null) => {
         const prizes: PrizeType[] = [];
-        const prizeCount = Math.floor(Math.random() * 2) + 2; // 2 or 3 random prizes
+        const minPrizes = 4;
+        const maxPrizes = walletTypes.length; // use all if you want, or set to 6 etc
+        const prizeCount = Math.floor(Math.random() * (maxPrizes - minPrizes + 1)) + minPrizes;
+        // Choose wallets randomly
+        const walletsSample = walletTypes.sort(() => 0.5 - Math.random()).slice(0, prizeCount);
 
-        // Define possible prize configurations
-        const scoreAmounts = [1, 5, 10, 20, 30, 50, 100];
-        const dAmounts = [30, 50, 100, 200, 300, 500];
-
-        // Generate random Score prizes
-        const scoreCount = Math.floor(Math.random() * 2) + 1; // 1 or 2 Score prizes
-        for (let i = 0; i < scoreCount; i++) {
-            const amount = scoreAmounts[Math.floor(Math.random() * scoreAmounts.length)];
-            // Skip if this amount matches the excluded prize
-            if (excludePrize && excludePrize.wallet_name === "GB" && excludePrize.amount === amount) {
-                continue;
+        walletsSample.forEach(wallet => {
+            // Get random amount for each wallet
+            let amount = 0;
+            if (wallet === 'GB' || wallet === 'ID' || wallet === 'BS') {
+                const scoreAmounts = [1, 5, 10, 20, 30, 50, 100];
+                amount = scoreAmounts[Math.floor(Math.random() * scoreAmounts.length)];
+            } else if (wallet === 'D') {
+                const dAmounts = [30, 50, 100, 200, 300, 500];
+                amount = dAmounts[Math.floor(Math.random() * dAmounts.length)];
+            } else if (wallet === 'DM') {
+                const diamondAmounts = [1, 2, 5, 10, 20];
+                amount = diamondAmounts[Math.floor(Math.random() * diamondAmounts.length)];
             }
-            prizes.push({
-                label: `${amount} Score`,
-                issuer: "GB",
-                amount: amount,
-                wallet_name: "GB"
-            });
-        }
 
-        // Generate random D prizes
-        const dCount = Math.floor(Math.random() * 2) + 1; // 1 or 2 D prizes
-        for (let i = 0; i < dCount; i++) {
-            const amount = dAmounts[Math.floor(Math.random() * dAmounts.length)];
-            // Skip if this amount matches the excluded prize
-            if (excludePrize && excludePrize.wallet_name === "D" && excludePrize.amount === amount) {
-                continue;
+            // Skip excluded prize
+            if (
+                excludePrize &&
+                excludePrize.wallet_name === wallet &&
+                excludePrize.amount === amount
+            ) {
+                return;
             }
-            prizes.push({
-                label: `${amount} D`,
-                issuer: "GB",
-                amount: amount,
-                wallet_name: "D"
-            });
-        }
 
-        // Shuffle the prizes array
+            prizes.push({
+                label: `${amount} ${wallet}`,
+                issuer: wallet,
+                amount,
+                wallet_name: wallet,
+            });
+        });
+
+        // Shuffle and return
         for (let i = prizes.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [prizes[i], prizes[j]] = [prizes[j], prizes[i]];
         }
-
-        // Return only the requested number of prizes
         return prizes.slice(0, prizeCount);
     };
+
+    function getPrizeLabel(amount: number, wallet: string) {
+        switch (wallet) {
+            case 'GB':
+            case 'ID':
+            case 'BS':
+                return `${amount} Score from ${wallet} Wallet`;
+            case 'DM':
+                return `${amount} Diamond from DM Wallet`;
+            case 'D':
+                return `${amount} D from D Wallet`;
+            default:
+                return `${amount} ${wallet} from ${wallet} Wallet`;
+        }
+    }
 
     // Generate random prizes on component mount
     useEffect(() => {
         const randomPrizes = generateRandomPrizes(prize);
         setRandomPrizes(randomPrizes);
         console.log('🎲 Generated random prizes:', randomPrizes);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [prize]);
 
     // Ensure the won prize is always present in the wheel with random other prizes
@@ -94,21 +109,15 @@ export default function SpinWheelModal({ onClose, prize }: SpinWheelModalProps) 
         );
 
         if (existingIndex !== -1) {
-            console.log('✅ Prize found in random prizes at index:', existingIndex);
             return randomPrizes;
         }
 
-        // If not found, add it to the wheel with random prizes
+        // Always format scanned prize as "{amount} {wallet_name}" (force, don't trust backend)
         const newPrize = {
             ...prize,
-            label: prize.wallet_name === "GB"
-                ? `${prize.amount} Score`
-                : prize.wallet_name === "D"
-                    ? `${prize.amount} D`
-                    : `${prize.amount} ${prize.wallet_name}`,
+            label: `${prize.amount} ${prize.wallet_name}`,
         };
 
-        console.log('➕ Adding scanned prize to random wheel:', newPrize);
         return [...randomPrizes, newPrize];
     }, [prize, randomPrizes]);
 
@@ -286,7 +295,7 @@ export default function SpinWheelModal({ onClose, prize }: SpinWheelModalProps) 
         if (!spinning && resultPrize) {
             to = setTimeout(() => {
                 onClose(resultPrize.label);
-            }, 5000);
+            }, 3000);
         }
         return () => {
             if (to) clearTimeout(to);
@@ -312,18 +321,21 @@ export default function SpinWheelModal({ onClose, prize }: SpinWheelModalProps) 
                 </button>
 
                 {/* Logo at the top */}
-                <div className="absolute top-6 left-1/2 -translate-x-1/2">
+                <div className="absolute top-6 left-1/2 -translate-x-1/2 flex flex-col items-center">
                     <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden animate-zoom">
                         <Image
                             src={logo}
                             alt="Logo"
-                            width={60}
-                            height={60}
+                            width={70}
+                            height={70}
                             className="object-contain"
                         />
                     </div>
+                    <div className="mt-3 text-lg font-bold text-white text-center">
+                        GANZBERG GERMAN PREMIUM BEER
+                    </div>
                 </div>
-                <div className="relative w-[300px] h-[300px] mt-4">
+                <div className="relative w-[300px] h-[300px] mt-40">
                     <canvas
                         ref={canvasRef}
                         width={280}
@@ -350,9 +362,11 @@ export default function SpinWheelModal({ onClose, prize }: SpinWheelModalProps) 
                     </p>
                 )}
                 {!spinning && resultPrize && (
-                    <div className="mt-6 text-center">
-                        <h3 className="text-2xl font-bold text-yellow-300 mb-2">🎉 Congratulation!</h3>
-                        <p className="text-xl text-white">You won <b>{resultPrize.label}</b> from <b>{prize.wallet_name}</b>!</p>
+                    <div className="mt-8 text-center">
+                        <h3 className="text-xl font-bold text-yellow-300 mb-2">🎉 Congratulation!</h3>
+                        <p className="text-xl text-white">
+                            You won <b>{getPrizeLabel(resultPrize.amount, resultPrize.wallet_name)}</b>
+                        </p>
                     </div>
                 )}
             </Dialog.Panel>
@@ -360,4 +374,4 @@ export default function SpinWheelModal({ onClose, prize }: SpinWheelModalProps) 
     );
 }
 
-//Correct with 363 line code changes
+//Correct with 377 line code changes

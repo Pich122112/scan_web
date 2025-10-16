@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import ResultDialog from '@/components/ResultDialog';
 import { TOKEN_STORAGE_KEY } from '@/services/auth_api';
 import { CodeValidator } from '@/utils/codeValidator';
+import SpinWheelModal from '@/components/SpinWheelModal';
+
 
 interface PrizeData {
     issuer: string;
@@ -28,6 +30,9 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
     const [code, setCode] = useState<string>('');
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [alreadyRedeemed, setAlreadyRedeemed] = useState(false);
+    const [showSpinWheel, setShowSpinWheel] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [spinWheelDone, setSpinWheelDone] = useState(false);
 
     useEffect(() => {
         // Only run once on mount
@@ -78,7 +83,7 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
                     setShowResultDialog(false);
                     setPrize(null);
                     router.replace('/');
-                }, 5000);
+                }, 3000);
                 return;
             }
 
@@ -110,7 +115,7 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
                         setShowResultDialog(false);
                         setPrize(null);
                         router.replace('/');
-                    }, 5000);
+                    }, 3000);
                     return;
                 }
 
@@ -138,7 +143,7 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
                         setShowResultDialog(false);
                         setPrize(null);
                         router.replace('/');
-                    }, 5000);
+                    }, 3000);
                     return;
                 }
 
@@ -148,7 +153,7 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
                     issuer: d.issuer?.toString() ?? '',
                     amount: d.point ?? d.amount ?? 0,
                     wallet_id: d.wallet ?? d.wallet_id ?? 0,
-                    wallet_name: d.wallet_name ?? '',
+                    wallet_name: d.wallet_name ?? d.wallet ?? '',
                     new_amount: d.new_amount ?? 0,
                     label: d.label || '',
                     status: d.status
@@ -197,7 +202,8 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
                 setErrorMsg(null);
                 setAlreadyRedeemed(false);
                 setLoading(false);
-                setShowResultDialog(true);
+                setShowSpinWheel(true); // <-- SHOW WHEEL
+                setShowResultDialog(false); // Hide dialog initially
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
             } catch (error) {
                 // Only for real network or other code errors!
@@ -212,6 +218,12 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
         })();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [params]);
+
+    const handleSpinWheelClose = () => {
+        setShowSpinWheel(false);
+        setSpinWheelDone(true);
+        setShowResultDialog(true); // Show dialog after wheel
+    };
 
     const handleDialogClose = async () => {
         // If you want to redeem before closing, you can keep this
@@ -254,7 +266,7 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
                     setShowResultDialog(false);
                     setPrize(null);
                     router.replace('/');
-                }, 5000);
+                }, 3000);
                 return;
             }
 
@@ -343,14 +355,21 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
         <div className="flex justify-center items-center min-h-screen">
             {/* Always show a fallback UI */}
             {/* Overlay spinner */}
-            {loading && (
+            {loading && !showSpinWheel && (
                 <div className="absolute flex flex-col items-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
                 </div>
             )}
             <p className="text-white loading-dots font-semibold text-lg mt-18">Loading</p>
 
-            {showResultDialog && (
+            {showSpinWheel && prize && (
+                <SpinWheelModal
+                    prize={prize}
+                    onClose={handleSpinWheelClose}
+                />
+            )}
+
+            {!showSpinWheel && showResultDialog && (
                 <ResultDialog
                     prize={prize ? prize.label : null}
                     errorMsg={errorMsg}
@@ -365,4 +384,4 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
 
 }
 
-//Correct with 338 line code changes
+//Correct with 387 line code changes
