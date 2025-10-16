@@ -212,8 +212,10 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
                 setAlreadyRedeemed(false);
                 setLoading(false);
                 setShowResultDialog(true);
+                setTimeout(() => {
+                    setShowResultDialog(false);
+                }, 3000);
             }
-
             setIsVerified(!!localStorage.getItem('userVerifiedPhone'));
         })();
         // eslint-disable-next-line react-hooks/exhaustive-deps
