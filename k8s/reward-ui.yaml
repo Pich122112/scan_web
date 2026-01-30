@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reward-ui
+  namespace: sandbox
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: reward-ui
+  template:
+    metadata:
+      labels:
+        app: reward-ui
+    spec:
+      containers:
+        - name: reward-ui
+          image: pary123456789/v-3:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: NEXT_PUBLIC_API_URL
+              value: "https://api.sandbox.gzb.app/api/v2/health"
+            - name: NEXTAUTH_URL
+              value: "https://wrw.app"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reward-ui-svc
+  namespace: sandbox
+spec:
+  type: ClusterIP
+  selector:
+    app: reward-ui
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000

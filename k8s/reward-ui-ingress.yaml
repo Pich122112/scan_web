@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: reward-ui-ingress
+  namespace: sandbox
+spec:
+  rules:
+    - host: portal.sandbox.gzb.app
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: reward-ui-svc
+                port:
+                  number: 80

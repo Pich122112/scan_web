@@ -1,0 +1,16 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: prod-ssl-secret
+  namespace: sandbox
+spec:
+  secretName: prod-ssl-secret
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - portal.sandbox.gzb.app
+    - api.sandbox.gzb.app
+    - api-merchant.sandbox.gzb.app
+    - wrw.app
+    
