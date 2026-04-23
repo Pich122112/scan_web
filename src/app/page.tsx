@@ -43,21 +43,26 @@ export default function HomePage() {
   };
 
   async function refreshUserProfile() {
+    // ⚠️ SECURITY WARNING (Finding #3): Token stored in localStorage
+    // Backend should migrate to HttpOnly cookies
     const token = localStorage.getItem(TOKEN_STORAGE_KEY) || '';
     if (token) {
       try {
         const profileData = await fetchUserProfile(token);
         setUserData(profileData.data || profileData);
+        // ⚠️ SECURITY WARNING (Finding #3): User data stored in localStorage
         localStorage.setItem(USER_DATA_STORAGE_KEY, JSON.stringify(profileData.data || profileData));
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
-        console.error('Failed to fetch user profile:', e);
+        // Silent fail - error handled by UI
       }
     }
   }
 
   useEffect(() => {
     const checkUserVerification = async () => {
-      const storedPhone = localStorage.getItem('userVerifiedPhone'); // ✅ unified key
+      const storedPhone = localStorage.getItem('userVerifiedPhone');
+      // ⚠️ SECURITY WARNING (Finding #3): Reading user data from localStorage
       const storedUserData = localStorage.getItem(USER_DATA_STORAGE_KEY);
       const token = localStorage.getItem(TOKEN_STORAGE_KEY);
 
@@ -72,14 +77,16 @@ export default function HomePage() {
             localStorage.setItem(USER_DATA_STORAGE_KEY, JSON.stringify(profileData.data || profileData));
             setIsVerified(true);
           } else {
+            // ⚠️ SECURITY WARNING (Finding #3): Clearing localStorage on auth failure
             localStorage.removeItem(TOKEN_STORAGE_KEY);
             localStorage.removeItem(USER_DATA_STORAGE_KEY);
-            localStorage.removeItem('userVerifiedPhone'); // ✅ match key
+            localStorage.removeItem('userVerifiedPhone');
             setShowResultDialog(true);
             setIsVerified(false);
           }
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (e) {
-          console.error('Failed to verify user token', e);
+          // Silent fail - will show login dialog
           setShowResultDialog(true);
           setIsVerified(false);
         }

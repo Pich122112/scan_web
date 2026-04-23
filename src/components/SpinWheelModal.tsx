@@ -95,7 +95,6 @@ export default function SpinWheelModal({ onClose, prize }: SpinWheelModalProps) 
     useEffect(() => {
         const randomPrizes = generateRandomPrizes(prize);
         setRandomPrizes(randomPrizes);
-        console.log('🎲 Generated random prizes:', randomPrizes);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [prize]);
 
@@ -237,22 +236,11 @@ export default function SpinWheelModal({ onClose, prize }: SpinWheelModalProps) 
             const baseRotations = 5;
             const segmentAngle = 360 / segmentCount;
 
-            // DEBUG: Log all prizes and their indices
-            console.log('🎡 Wheel prizes:', wheelPrizes.map((p, i) => `${i}: ${p.label}`));
-            console.log('🎯 Target prize:', prize?.label, 'at index:', finalIndex);
 
             // Calculate spin to position target at bottom pointer (180°)
             const targetSegmentCenter = (finalIndex * segmentAngle) + (segmentAngle / 2);
             const rotationToTarget = 180 - targetSegmentCenter;
             const totalRotation = baseRotations * 360 + rotationToTarget;
-
-            console.log('🔄 Spin calculation:', {
-                segmentCount,
-                segmentAngle,
-                targetSegmentCenter,
-                rotationToTarget,
-                totalRotation
-            });
 
             const animate = (timestamp: number) => {
                 if (!startTime) startTime = timestamp;

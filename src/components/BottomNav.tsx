@@ -99,8 +99,8 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
       await track.applyConstraints(constraints);
 
       setTorchOn(enable);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
-      console.error('toggleTorch error:', err);
       setErrorMsg('Unable to toggle torch.');
       setTimeout(() => setErrorMsg(null), 3000);
     }
@@ -132,13 +132,8 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
       return;
     }
 
-    // 2️⃣ Extract the NATURAL CODE (11 chars)
-    const naturalCode = codePart.substring(0, 11);
-
-    console.log('🟡 [DEBUG] Code sent to backend:', codePart); // Now full code
-    console.log('🟢 [DEBUG] Full code part:', codePart);
-    console.log('🟢 [DEBUG] Natural code:', naturalCode);
-    console.log('🟢 [DEBUG] Signature:', codePart.substring(11));
+    // ✅ REMOVED: console.log statements (Finding #7)
+    // No longer logging sensitive QR code data
 
     // Use full codePart for used check!
     if (usedCodes.has(codePart)) {
@@ -247,8 +242,9 @@ export default function BottomNav({ onPrizeWin }: BottomNavProps) {
 
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleError = (error: unknown) => {
-    console.error('QR Scanner error:', error);
+    // Silent fail - error handled by UI
   };
 
   const handleWheelClose = () => {

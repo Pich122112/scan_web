@@ -285,8 +285,19 @@ export default function TPage({ params }: { params: Promise<{ id: string }> }) {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'X-App-Package': 'com.ganzberg.scanprizefront'
             };
+            // ⚠️ SECURITY WARNING (Finding #3): Token stored in localStorage
+            // Backend should migrate to HttpOnly cookies
             const token = localStorage.getItem('userAuthToken') || localStorage.getItem(TOKEN_STORAGE_KEY);
-            if (token) headers['Authorization'] = `Bearer ${token}`;
+
+            // ✅ FAIL FAST: Check token before making request (Finding #4)
+            if (!token) {
+                setPrize(null);
+                setErrorMsg('❌ Please login again to redeem.');
+                setAlreadyRedeemed(true);
+                return;
+            }
+
+            headers['Authorization'] = `Bearer ${token}`;
 
             // Redeem code
             const response = await fetch('https://api.sandbox.gzb.app/api/v2/redeem/scan', {

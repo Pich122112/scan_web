@@ -21,7 +21,10 @@ export class DeviceUUID {
           return storedUUID;
         }
       } catch (e) {
-        console.error('Error reading UUID from localStorage:', e);
+        // Silent fail - will generate new UUID
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Error reading UUID from localStorage:', e);
+        }
       }
     }
 
@@ -38,19 +41,41 @@ export class DeviceUUID {
       try {
         localStorage.setItem(this.STORAGE_KEY, newUuid);
       } catch (e) {
-        console.error('Error saving UUID to localStorage:', e);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Error saving UUID to localStorage:', e);
+        }
       }
     }
 
     return newUuid;
   }
 
+  // ✅ FIXED: Use cryptographically secure random UUID
   private static generateUUIDv4(): string {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
+    // Use Web Crypto API for cryptographically secure random UUID
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+
+    // Fallback for older browsers (still more secure than Math.random)
+    return this.generateFallbackUUID();
+  }
+
+  // Fallback for browsers that don't support crypto.randomUUID()
+  private static generateFallbackUUID(): string {
+    // Use crypto.getRandomValues as fallback (cryptographically secure)
+    const array = new Uint32Array(4);
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      crypto.getRandomValues(array);
+    } else {
+      // Last resort fallback (still better than Math.random alone)
+      for (let i = 0; i < array.length; i++) {
+        array[i] = (Math.random() * 0x100000000) >>> 0;
+      }
+    }
+
+    // Format as UUID v4
+    return `${(array[0] & 0xffffffff).toString(16).padStart(8, '0')}-${(array[1] & 0xffff).toString(16).padStart(4, '0')}-4${(array[1] >>> 16 & 0xfff).toString(16).padStart(3, '0')}-${(array[2] & 0x3fff | 0x8000).toString(16).padStart(4, '0')}-${(array[3] & 0xffffffff).toString(16).padStart(12, '0')}`;
   }
 
   private static isValidUUID(uuid: string): boolean {
@@ -63,10 +88,12 @@ export class DeviceUUID {
       try {
         localStorage.removeItem(this.STORAGE_KEY);
       } catch (e) {
-        console.error('Error clearing UUID from localStorage:', e);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Error clearing UUID from localStorage:', e);
+        }
       }
     }
   }
 }
 
-//Correct with 72 line code cahnges
+//Correct with 99 line code changes

@@ -1,13 +1,5 @@
 // services/auth_api.ts
 
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const encodeFormData = (data: Record<string, string>): string => {
-  return Object.keys(data)
-    .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(data[key]))
-    .join('&');
-};
-
 export const requestOtp = async (phone: string) => {
   try {
     const formData = new FormData();
@@ -28,8 +20,8 @@ export const requestOtp = async (phone: string) => {
     }
 
     return response.json();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
-    console.error('OTP request error:', error);
     return { success: false, message: 'Network error. Please try again.' };
   }
 };
@@ -66,8 +58,8 @@ export const verifyOtp = async (
     }
 
     return response.json();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
-    console.error('OTP verification error:', error);
     return { success: false, message: 'Network error. Please try again.' };
   }
 };
@@ -88,8 +80,8 @@ export const fetchUserProfile = async (token: string) => {
     }
 
     return response.json();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
-    console.error('Fetch profile error:', error);
     return { success: false, message: 'Network error. Please try again.' };
   }
 };
@@ -104,8 +96,8 @@ export const checkApiHealth = async () => {
       },
     });
     return response.ok;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
-    console.error('API health check failed:', error);
     return false;
   }
 };

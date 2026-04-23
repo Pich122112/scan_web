@@ -9,14 +9,19 @@ interface Wallet {
   balance: number;
 }
 
+// ⚠️ SECURITY WARNING (Finding #3): User data contains sensitive fields
+// - passcode: User's PIN (should NOT be stored in localStorage)
+// - signature: User's signature (should NOT be stored in localStorage)
+// - phone_number: PII (should be minimized)
+// Backend should remove passcode and signature from API response
 interface UserData {
   id: number;
   name: string;
   status: number;
-  phone_number: string;
+  phone_number: string; // ⚠️ Sensitive - should not be stored
   user_type: number;
   passcode: number;
-  signature: string;
+  signature: string; // ⚠️ Sensitive - should not be stored
   wallets: Wallet[];
 }
 
@@ -54,13 +59,17 @@ export const PhoneProvider: React.FC<PhoneProviderProps> = ({ children }) => {
   };
 
   // ✅ Hydrate userData from localStorage on app load
+  // ⚠️ SECURITY WARNING (Finding #3): Reading user data from localStorage
+  // Contains sensitive data (passcode, signature). Backend should:
+  // 1. Remove passcode and signature from API response
+  // 2. Migrate to HttpOnly cookies
   useEffect(() => {
     const storedUserData = localStorage.getItem(USER_DATA_STORAGE_KEY);
     if (storedUserData) {
       try {
         setUserData(JSON.parse(storedUserData));
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
-        console.error("Failed to parse stored user data", e);
       }
     }
   }, []);

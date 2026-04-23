@@ -174,10 +174,14 @@ export default function ResultDialog({
       if (result.success) {
         const authToken = result.data?.token || result.token;
         if (authToken) {
+          // ⚠️ SECURITY WARNING (Finding #3): Token and user data stored in localStorage
+          // This is temporary. Backend should migrate to HttpOnly cookies.
           localStorage.setItem(TOKEN_STORAGE_KEY, authToken);
           const userProfile = await fetchUserProfile(authToken);
           if (userProfile.success) {
             setUserData(userProfile.data);
+            // ⚠️ SECURITY WARNING (Finding #3): Token and user data stored in localStorage
+            // This is temporary. Backend should migrate to HttpOnly cookies.
             localStorage.setItem(USER_DATA_STORAGE_KEY, JSON.stringify(userProfile.data));
             confirmPhoneNumber();
             localStorage.setItem(PHONE_STORAGE_KEY, tempPhoneNumber);
@@ -207,9 +211,17 @@ export default function ResultDialog({
 
   const handleRedeem = async () => {
     if (!isVerified) return;
+
+    // ✅ FAIL FAST: Check token before making request (Finding #4)
+    const token = localStorage.getItem(TOKEN_STORAGE_KEY) || '';
+    if (!token) {
+      setError('Please login again');
+      setRedeemStatus('error');
+      return;
+    }
+
     setRedeemStatus('processing');
     try {
-      const token = localStorage.getItem(TOKEN_STORAGE_KEY) || '';
       const response = await fetch('https://api.sandbox.gzb.app/api/v2/redeem/scan', {
         method: 'POST',
         headers: {
@@ -227,6 +239,8 @@ export default function ResultDialog({
         const userProfile = await fetchUserProfile(token);
         if (userProfile.success) {
           setUserData(userProfile.data);
+          // ⚠️ SECURITY WARNING (Finding #3): Token and user data stored in localStorage
+          // This is temporary. Backend should migrate to HttpOnly cookies.
           localStorage.setItem(USER_DATA_STORAGE_KEY, JSON.stringify(userProfile.data));
         }
         setTimeout(() => { onClose(); }, 2000);
@@ -402,4 +416,4 @@ export default function ResultDialog({
   );
 }
 
-//Correct with 405 line code change
+//Correct with 419 line code changes
